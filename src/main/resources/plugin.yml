@@ -6,3 +6,9 @@ description: Custom functionality for the PunchTree freebuild server.
 authors:
   - Cxom (Jeremy)
   - Sock (Mike)
+commands:
+  blocks:
+    description: Access the remote block shop!
+    aliases: [shop]
+    permission: ptfb.commands.blocks
+    usage: Invalid command! Please type /blocks or /shop to access the remote block shop.
