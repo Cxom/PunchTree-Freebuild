@@ -22,27 +22,24 @@ import java.util.List;
 
 public class BlocksCommand implements CommandExecutor, Listener {
     private final Inventory TEMPLATED_INVENTORY;
-    private final ItemStack SCROLL_LEFT_ITEM;
-    private final ItemStack SCROLL_RIGHT_ITEM;
-    private final ItemStack PLACEHOLDER_ITEM;
+    private static final ItemStack SCROLL_LEFT_ITEM;
+    private static final ItemStack SCROLL_RIGHT_ITEM;
+    private static final ItemStack PLACEHOLDER_ITEM;
     private static final List<Material> MATERIALS;
     private static final List<ItemStack> CLICKABLE_ITEMS;
     private static final Component BLOCK_SHOP_TITLE;
-    private static final int BLOCK_SHOP_SIZE;
-    private static final int BLOCKS_PER_PAGE;
+    private static final int BLOCK_SHOP_SIZE = 45;
+    private static final int BLOCKS_PER_PAGE = 36;
     private static final Component SCROLL_RIGHT_ITEM_NAME;
     private static final Component SCROLL_LEFT_ITEM_NAME;
     private static final Component PLACEHOLDER_ITEM_NAME;
     private static final List<Component> CLICKABLE_ITEM_LORE;
 
     static {
-        MATERIALS = new ArrayList<>();
         CLICKABLE_ITEMS = new ArrayList<>();
         BLOCK_SHOP_TITLE = Component
                 .text("Survival Block Depot")
                 .color(NamedTextColor.DARK_GRAY);
-        BLOCK_SHOP_SIZE = 45;
-        BLOCKS_PER_PAGE = 35;
         SCROLL_RIGHT_ITEM_NAME = Component
                 .text("Scroll Right")
                 .color(NamedTextColor.GOLD)
@@ -61,7 +58,7 @@ public class BlocksCommand implements CommandExecutor, Listener {
                         .text("Shift-right click to fill your inventory.")
                         .color(NamedTextColor.GREEN)
                         .decoration(TextDecoration.ITALIC, true));
-        MATERIALS.addAll(List.of(
+        MATERIALS = List.of(
                 Material.OAK_LOG,
                 Material.BIRCH_LOG,
                 Material.SPRUCE_LOG,
@@ -152,7 +149,7 @@ public class BlocksCommand implements CommandExecutor, Listener {
                 Material.MAGENTA_CONCRETE_POWDER,
                 Material.PINK_CONCRETE_POWDER,
                 Material.FERN
-        ));
+        );
 
         for(Material m : MATERIALS) {
             ItemStack clickableItem = new ItemStack(m);
@@ -165,11 +162,7 @@ public class BlocksCommand implements CommandExecutor, Listener {
                     });
             CLICKABLE_ITEMS.add(clickableItem);
         }
-    }
 
-    public BlocksCommand() {
-        //Below creates the template inventory used to generate the displayed inventory when a player runs /blocks
-        TEMPLATED_INVENTORY = Bukkit.createInventory(null, BLOCK_SHOP_SIZE, BLOCK_SHOP_TITLE);
         SCROLL_LEFT_ITEM = new ItemStack(Material.AMETHYST_SHARD);
         SCROLL_RIGHT_ITEM = SCROLL_LEFT_ITEM.clone();
         PLACEHOLDER_ITEM = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
@@ -178,18 +171,21 @@ public class BlocksCommand implements CommandExecutor, Listener {
             meta.displayName(SCROLL_LEFT_ITEM_NAME);
         });
         SCROLL_RIGHT_ITEM.editMeta(meta -> {
-           meta.displayName(SCROLL_RIGHT_ITEM_NAME);
+            meta.displayName(SCROLL_RIGHT_ITEM_NAME);
         });
         PLACEHOLDER_ITEM.editMeta(meta -> {
             meta.displayName(PLACEHOLDER_ITEM_NAME);
         });
+    }
+
+    public BlocksCommand() {
+        //Below creates the template inventory used to generate the displayed inventory when a player runs /blocks
+        TEMPLATED_INVENTORY = Bukkit.createInventory(null, BLOCK_SHOP_SIZE, BLOCK_SHOP_TITLE);
 
         //Apply (placeholder & scroll items) to the left and right sides
-        for(int i = 0; i < BLOCK_SHOP_SIZE; i = i+8) {
-            TEMPLATED_INVENTORY.setItem(i, PLACEHOLDER_ITEM);
-            if(i == 0 || i+1 >= BLOCK_SHOP_SIZE) {continue;}
-            i++;
-            TEMPLATED_INVENTORY.setItem(i, PLACEHOLDER_ITEM);
+        for(int row = 0; row < BLOCK_SHOP_SIZE; row += 9) {
+            TEMPLATED_INVENTORY.setItem(row, PLACEHOLDER_ITEM);
+            TEMPLATED_INVENTORY.setItem(row+8, PLACEHOLDER_ITEM);
         }
         TEMPLATED_INVENTORY.setItem(18, SCROLL_LEFT_ITEM);
         TEMPLATED_INVENTORY.setItem(26, SCROLL_RIGHT_ITEM);
@@ -205,25 +201,27 @@ public class BlocksCommand implements CommandExecutor, Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         HumanEntity clicker = event.getWhoClicked();
         Inventory clickedInventory = event.getClickedInventory();
-        if(event.getView().title().equals(BLOCK_SHOP_TITLE)) {
-            event.setCancelled(true);
-            ItemStack clickedItem = event.getCurrentItem();
-            if(clickedItem == null || clickedItem.equals(PLACEHOLDER_ITEM) || clickedInventory == null) {return;}
+        if (!event.getView().title().equals(BLOCK_SHOP_TITLE)) {
+            return;
+        }
 
-            if(clickedItem.equals(SCROLL_LEFT_ITEM)) {
-                scrollInventory(-7, clickedInventory);
-            }else if(clickedItem.equals(SCROLL_RIGHT_ITEM)) {
-                scrollInventory(7, clickedInventory);
-            }else {
-                if(CLICKABLE_ITEMS.contains(clickedItem)) {
-                    ItemStack itemToGive = new ItemStack(clickedItem.getType(), 64);
-                    Inventory clickerInventory = clicker.getInventory();
-                    if(event.isRightClick() && event.isShiftClick()) {
-                        while(clickerInventory.firstEmpty() != -1) {
-                            clickerInventory.addItem(itemToGive);
-                        }
-                        return;
+        event.setCancelled(true);
+        ItemStack clickedItem = event.getCurrentItem();
+        if(clickedItem == null || clickedItem.equals(PLACEHOLDER_ITEM) || clickedInventory == null) {return;}
+
+        if(clickedItem.equals(SCROLL_LEFT_ITEM)) {
+            scrollInventory(-7, clickedInventory);
+        }else if(clickedItem.equals(SCROLL_RIGHT_ITEM)) {
+            scrollInventory(7, clickedInventory);
+        }else {
+            if(CLICKABLE_ITEMS.contains(clickedItem)) {
+                ItemStack itemToGive = new ItemStack(clickedItem.getType(), 64);
+                Inventory clickerInventory = clicker.getInventory();
+                if(event.isRightClick() && event.isShiftClick()) {
+                    while(clickerInventory.firstEmpty() != -1) {
+                        clickerInventory.addItem(itemToGive);
                     }
+                } else {
                     clicker.getInventory().addItem(itemToGive);
                 }
             }
@@ -237,8 +235,18 @@ public class BlocksCommand implements CommandExecutor, Listener {
         blockInventory.addItem(currentStock.toArray(new ItemStack[0]));
         return blockInventory;
     }
+
     private void scrollInventory(int amountToScroll, Inventory invToScroll) {
-        
+        int clickableItemIndex = CLICKABLE_ITEMS.indexOf(invToScroll.getItem(1));
+
+        if (clickableItemIndex == 0 && amountToScroll <= 0) return;
+        if (clickableItemIndex + BLOCKS_PER_PAGE >= CLICKABLE_ITEMS.size() - 1 && amountToScroll >= 0) return;
+
+        invToScroll.setContents(TEMPLATED_INVENTORY.getContents());
+
+        int sublistStart = clickableItemIndex + amountToScroll;
+        List<ItemStack> itemsOnThisPage = CLICKABLE_ITEMS.subList(sublistStart, Math.min(sublistStart + BLOCKS_PER_PAGE, CLICKABLE_ITEMS.size()));
+        itemsOnThisPage.forEach(invToScroll::addItem);
     }
 
     private void wipeClickableBlocks(Inventory currentInventory) {
