@@ -2,6 +2,7 @@ name: PunchTree-Freebuild
 main: net.punchtree.freebuild.PunchTreeFreebuildPlugin
 version: 0.1
 api-version: 1.19
+depend: [WorldGuard]
 description: Custom functionality for the PunchTree freebuild server.
 authors:
   - Cxom (Jeremy)
@@ -12,3 +13,6 @@ commands:
     aliases: [shop]
     permission: ptfb.commands.blocks
     usage: Invalid command! Please type /blocks or /shop to access the remote block shop.
+  claimtest:
+    description: A testing command to aid in development of the claim system
+    usage: /claimtest <subcommand>
