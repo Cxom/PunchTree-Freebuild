@@ -1,5 +1,6 @@
 package net.punchtree.freebuild.billiards;
 
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -30,6 +31,7 @@ public class BilliardsCommand implements CommandExecutor {
             case "spawn-cue-ball" -> {
                 Set<BilliardTable> nearbyTables = billiardsManager.getNearbyTables(player.getLocation());
                 nearbyTables.forEach(BilliardTable::spawnCueBall);
+                player.sendMessage(ChatColor.AQUA + "Spawned cue ball!");
             }
             default -> player.sendMessage("Subcommand not recognized");
         }

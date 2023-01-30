@@ -8,9 +8,13 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class BilliardTable {
 
+    static final int TABLE_SHORT_SIZE = 8;
+    static final int TABLE_LONG_SIZE = TABLE_SHORT_SIZE * 2;
     private final World world;
     private final int y, xMin, zMin, xMax, zMax;
     private final boolean isXMainAxis;
+
+    private BilliardBall cueBall;
 
     public BilliardTable(World world, int y, int xMin, int zMin, int xMax, int zMax) {
         this.world = world;
@@ -27,9 +31,9 @@ public class BilliardTable {
     }
     private Location getHeadCenter() {
         if (isXMainAxis) {
-            return new Location(world, (xMin + xMax) * .25, y, (zMin + zMax) * .5);
+            return new Location(world, xMin + .25 * TABLE_LONG_SIZE, y, zMin + .5 * TABLE_SHORT_SIZE);
         } else {
-            return new Location(world, (xMin + xMax) * .5, y, (zMin + zMax) * .25);
+            return new Location(world, xMin + .5 * TABLE_SHORT_SIZE, y, zMin + .25 * TABLE_LONG_SIZE);
         }
     }
 
@@ -58,7 +62,14 @@ public class BilliardTable {
     }
 
     public void spawnCueBall() {
-        BilliardBall cueBall = new BilliardBall(this, getHeadCenter());
+        if (cueBall != null) {
+            cueBall.remove();
+        }
+        cueBall = new BilliardBall(this, getHeadCenter());
+    }
+
+    public void clear() {
+        cueBall.remove();
     }
 
 }

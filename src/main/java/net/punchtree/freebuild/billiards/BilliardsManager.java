@@ -13,7 +13,7 @@ import static net.punchtree.freebuild.billiards.BilliardsItems.TABLE_MATERIAL;
 
 public class BilliardsManager {
 
-    private static final double NEAR_THRESHOLD = 7;
+    private static final double NEAR_THRESHOLD = BilliardTable.TABLE_LONG_SIZE + 3;
 
     private Set<BilliardTable> billiardTables = new HashSet<>();
 
@@ -30,7 +30,7 @@ public class BilliardsManager {
             return;
         }
 
-        final int MAX_SEARCH_DISTANCE = 9;
+        final int MAX_SEARCH_DISTANCE = BilliardTable.TABLE_LONG_SIZE + 1;
         int xMinOffset = 0;
         int xMaxOffset = 0;
         int zMinOffset = 0;
@@ -57,7 +57,7 @@ public class BilliardsManager {
         }
 
         if (!isDimensionsRight(xMaxOffset - xMinOffset + 1, zMaxOffset - zMinOffset + 1)) {
-            player.sendMessage(ChatColor.RED + "It does not appear the dimensions of this pool table are right! It should be 4x8 blocks.");
+            player.sendMessage(ChatColor.RED + "It does not appear the dimensions of this pool table are right! It should be " + BilliardTable.TABLE_SHORT_SIZE + "x" + BilliardTable.TABLE_LONG_SIZE + " blocks (" + (xMaxOffset-xMinOffset+1) + ", " + (zMaxOffset - zMinOffset + 1) +  ").");
             return;
         }
 
@@ -86,7 +86,11 @@ public class BilliardsManager {
     }
 
     private boolean isDimensionsRight(int xSize, int zSize) {
-        return (xSize == 8 && zSize == 16) || (xSize == 16 & zSize == 8);
+        return (xSize == BilliardTable.TABLE_SHORT_SIZE && zSize == BilliardTable.TABLE_LONG_SIZE) || (xSize == BilliardTable.TABLE_LONG_SIZE & zSize == BilliardTable.TABLE_SHORT_SIZE);
+    }
+
+    public void onDisable() {
+        billiardTables.forEach(BilliardTable::clear);
     }
 
 }

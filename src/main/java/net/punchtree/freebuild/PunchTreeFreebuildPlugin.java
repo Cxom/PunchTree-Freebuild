@@ -41,4 +41,9 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(blocksCommand, this);
         Bukkit.getPluginManager().registerEvents(new BilliardsShootListener(billiardsManager), this);
     }
+
+    @Override
+    public void onDisable() {
+        billiardsManager.onDisable();
+    }
 }
