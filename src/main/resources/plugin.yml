@@ -11,11 +11,13 @@ commands:
   blocks:
     description: Access the remote block shop!
     aliases: [shop]
-    permission: ptfb.commands.blocks
     usage: Invalid command! Please type /blocks or /shop to access the remote block shop.
+    permission: ptfb.commands.blocks
   claimtest:
     description: A testing command to aid in development of the claim system
     usage: /claimtest <subcommand>
+    permission: ptfb.in-progress-testing
   billiards:
     description: A catchall command for billiards stuff
     usage: /billiards <subcommand>
+    permission: ptfb.in-progress-testing
