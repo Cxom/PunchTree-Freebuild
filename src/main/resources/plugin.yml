@@ -16,3 +16,6 @@ commands:
   claimtest:
     description: A testing command to aid in development of the claim system
     usage: /claimtest <subcommand>
+  billiards:
+    description: A catchall command for billiards stuff
+    usage: /billiards <subcommand>
