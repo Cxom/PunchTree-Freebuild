@@ -40,6 +40,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     private void registerEvents() {
         Bukkit.getPluginManager().registerEvents(blocksCommand, this);
         Bukkit.getPluginManager().registerEvents(new BilliardsShootListener(billiardsManager), this);
+        Bukkit.getPluginManager().registerEvents(new JebSheepGiveFreeDye(), this);
     }
 
     @Override
