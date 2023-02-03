@@ -66,6 +66,14 @@ public class ClaimTestingCommand implements CommandExecutor {
                     return true;
                 }
 
+                String testClaimRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
+                if (regionManager.hasRegion(testClaimRegionName)) {
+                    player.sendMessage(ChatColor.RED + "You cannot claim this chunk as it is already claimed!");
+                    return true;
+                }
+                ProtectedRegion testClaim = new ProtectedCuboidRegion(testClaimRegionName, min, max);
+
+
                 String playersUUID = player.getUniqueId().toString();
                 int personalRegionIndex = 1;
                 while (regionManager.hasRegion(String.format("%s-%d", playersUUID, personalRegionIndex))) {
@@ -73,9 +81,6 @@ public class ClaimTestingCommand implements CommandExecutor {
                 }
                 String newRegionName = String.format("%s-%d", playersUUID, personalRegionIndex);
                 ProtectedRegion region = new GlobalProtectedRegion(newRegionName);
-
-                String testClaimRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
-                ProtectedRegion testClaim = new ProtectedCuboidRegion(testClaimRegionName, min, max);
 
                 try {
                     testClaim.setParent(region);
