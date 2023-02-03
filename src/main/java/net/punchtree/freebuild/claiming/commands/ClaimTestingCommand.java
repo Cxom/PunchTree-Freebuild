@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.block.Block;
@@ -20,7 +21,17 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class ClaimTestingCommand implements CommandExecutor {
+
+    private final RegionContainer regionContainer;
+
+    public ClaimTestingCommand() {
+        regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -37,7 +48,6 @@ public class ClaimTestingCommand implements CommandExecutor {
         BlockVector3 min = BukkitAdapter.asBlockVector(chunkMinBlock.getLocation());
         BlockVector3 max = BukkitAdapter.asBlockVector(chunkMaxBlock.getLocation());
 
-        RegionContainer regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
         RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(chunk.getWorld()));
 
         if (regionManager == null) {
@@ -61,45 +71,100 @@ public class ClaimTestingCommand implements CommandExecutor {
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "Saved region to this world's region list");
             }
             case "create-region-with-confirmation" -> {
-                if (!isConfirmed(args, player)) {
-                    sendConfirmationPrompt(player);
-                    return true;
-                }
-
                 String testClaimRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
+                String playersUUID = player.getUniqueId().toString();
+
+                // Validate this is an unclaimed chunk
                 if (regionManager.hasRegion(testClaimRegionName)) {
                     player.sendMessage(ChatColor.RED + "You cannot claim this chunk as it is already claimed!");
                     return true;
                 }
-                ProtectedRegion testClaim = new ProtectedCuboidRegion(testClaimRegionName, min, max);
+
+                // Check if it is adjacent to other claims that are mine (we'll deal with other folks claims later)
+                List<Direction> directionsWithAdjacentClaims =
+                        Arrays.stream(Direction.values())
+                                .filter(direction -> hasAdjacentClaim(regionManager, playersUUID, chunk, direction))
+                                .collect(Collectors.toList());
+
+                if (directionsWithAdjacentClaims.size() == 0) {
+                    // This is establishing a new region!!!!
+                    if (!isConfirmed(args, player)) {
+                        sendConfirmationPrompt(player);
+                        return true;
+                    }
+
+                    int personalRegionIndex = 1;
+                    while (regionManager.hasRegion(String.format("%s-%d", playersUUID, personalRegionIndex))) {
+                        ++personalRegionIndex;
+                    }
+                    String newRegionName = String.format("%s-%d", playersUUID, personalRegionIndex);
+                    ProtectedRegion region = new GlobalProtectedRegion(newRegionName);
+
+                    ProtectedRegion testClaim = new ProtectedCuboidRegion(testClaimRegionName, min, max);
 
 
-                String playersUUID = player.getUniqueId().toString();
-                int personalRegionIndex = 1;
-                while (regionManager.hasRegion(String.format("%s-%d", playersUUID, personalRegionIndex))) {
-                    ++personalRegionIndex;
+                    try {
+                        testClaim.setParent(region);
+                    } catch (ProtectedRegion.CircularInheritanceException e) {
+                        // This should never actually be thrown since we're only parenting one freshly created region to another
+                        throw new RuntimeException(e);
+                    }
+
+                    regionManager.addRegion(testClaim);
+                    regionManager.addRegion(region);
+
+                    player.sendMessage(ChatColor.AQUA + "Established a new region under your name!");
+                    player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Parent region: " + newRegionName);
+                    player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Chunk region: " + testClaimRegionName);
+                } else {
+                    // We are appending to an existing region!
+                    String regionName ;
+                    for (Direction direction : Direction.values()) {
+                        if (directionsWithAdjacentClaims.contains(direction)) {
+                            ProtectedRegion adjacentRegion = getAdjacentRegion(regionManager, chunk, direction);
+                        } else {
+
+                        }
+                    }
                 }
-                String newRegionName = String.format("%s-%d", playersUUID, personalRegionIndex);
-                ProtectedRegion region = new GlobalProtectedRegion(newRegionName);
 
-                try {
-                    testClaim.setParent(region);
-                } catch (ProtectedRegion.CircularInheritanceException e) {
-                    // This should never actually be thrown since we're only parenting one freshly created region to another
-                    throw new RuntimeException(e);
-                }
+//            player.sendMessage(ChatColor.RED + "You cannot claim this chunk as it is too close to another claim to the north that is not yours!");
+//            return true;
 
-                regionManager.addRegion(testClaim);
-                regionManager.addRegion(region);
-
-                player.sendMessage(ChatColor.AQUA + "Established a new region under your name!");
-                player.sendMessage(ChatColor.LIGHT_PURPLE + "Parent region: " + newRegionName);
-                player.sendMessage(ChatColor.LIGHT_PURPLE + "Chunk region: " + testClaimRegionName);
             }
             default -> player.sendMessage(ChatColor.RED + "Subcommand not recognized");
         }
 
         return true;
+    }
+
+    private ProtectedRegion getAdjacentRegion(RegionManager regionManager, Chunk chunk, Direction direction) {
+        String chunkRegionName = String.format("claim_%d_%d", chunk.getX() + direction.x, chunk.getZ() + direction.z);
+
+        ProtectedRegion chunkRegion = regionManager.getRegion(chunkRegionName);
+        if (chunkRegion == null) return null;
+        return chunkRegion.getParent();
+    }
+
+    /**
+     * @param regionManager
+     * @param playersUUID
+     * @param chunk
+     * @param direction
+     * @return if the player with the given uuid has claimed the chunk adjacent to the passed in chunk in the given direction
+     */
+    private boolean hasAdjacentClaim(RegionManager regionManager, String playersUUID, Chunk chunk, Direction direction) {
+        ProtectedRegion playersRegion = getAdjacentRegion(regionManager, chunk, direction);
+        return playersRegion != null && playersRegion.getId().startsWith(playersUUID);
+    }
+
+    private enum Direction { NORTH(0,-1), EAST(1,0), SOUTH(0,1), WEST(-1,0);
+        private final int x, z;
+
+        Direction(int x, int z) {
+            this.x = x;
+            this.z = z;
+        }
     }
 
     private void sendConfirmationPrompt(Player player) {
