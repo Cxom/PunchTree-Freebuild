@@ -7,6 +7,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -40,7 +41,7 @@ public class JebSheepGiveFreeDye implements Listener {
         FREE_DYE_INVENTORY.addItem(new ItemStack(Material.PINK_DYE));
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onRightClickSheep(PlayerInteractEntityEvent event) {
         if (!isJebSheep(event.getRightClicked())) return;
         if (event.getHand() != EquipmentSlot.HAND) return;
