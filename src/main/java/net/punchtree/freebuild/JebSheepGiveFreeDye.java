@@ -45,6 +45,7 @@ public class JebSheepGiveFreeDye implements Listener {
         if (!isJebSheep(event.getRightClicked())) return;
         if (event.getHand() != EquipmentSlot.HAND) return;
         event.getPlayer().openInventory(FREE_DYE_INVENTORY);
+        event.setCancelled(true);
     }
 
     private boolean isJebSheep(Entity rightClicked) {
