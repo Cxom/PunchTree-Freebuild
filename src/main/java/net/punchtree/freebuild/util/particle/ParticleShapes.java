@@ -23,13 +23,13 @@ public class ParticleShapes {
     }
 
     public static void drawQuad(Location aa, Location ab, Location ba, Location bb, int steps) {
-        spawnParticleLine(aa, ab, steps);
-        spawnParticleLine(ab, bb, steps);
-        spawnParticleLine(aa, ba, steps);
-        spawnParticleLine(ba, bb, steps);
+        drawLine(aa, ab, steps);
+        drawLine(ab, bb, steps);
+        drawLine(aa, ba, steps);
+        drawLine(ba, bb, steps);
     }
 
-    public static void spawnParticleLine(Location a, Location b, int steps) {
+    public static void drawLine(Location a, Location b, int steps) {
         Vector difference = b.clone().toVector().subtract(a.toVector());
         difference.multiply(1d/(steps-1));
         // change <= vs < for endpoint

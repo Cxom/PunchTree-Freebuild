@@ -60,8 +60,8 @@ public class BlocksCommand implements CommandExecutor, Listener {
                         .decoration(TextDecoration.ITALIC, true));
         MATERIALS = List.of(
                 Material.OAK_LOG,
-                Material.BIRCH_LOG,
                 Material.SPRUCE_LOG,
+                Material.BIRCH_LOG,
                 Material.JUNGLE_LOG,
                 Material.ACACIA_LOG,
                 Material.DARK_OAK_LOG,
@@ -94,7 +94,7 @@ public class BlocksCommand implements CommandExecutor, Listener {
                 Material.QUARTZ_BLOCK,
                 Material.WAXED_COPPER_BLOCK,
                 Material.WHITE_WOOL,
-                Material.WHITE_TERRACOTTA,
+                Material.TERRACOTTA,
                 Material.GLASS,
                 Material.ICE,
                 Material.SNOW,
