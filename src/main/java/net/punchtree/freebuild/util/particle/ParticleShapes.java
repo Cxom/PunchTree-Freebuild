@@ -1,6 +1,7 @@
 package net.punchtree.freebuild.util.particle;
 
 import com.destroystokyo.paper.ParticleBuilder;
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -41,5 +42,12 @@ public class ParticleShapes {
 
     public static void spawnParticle(Location location) {
         particleBuilder.location(location).spawn();
+    }
+
+    public static void drawCircle(Location center, double radius, int steps) {
+        double stepSize = (2. * Math.PI) / (double) steps;
+        for (double d = 0; d < (2 * Math.PI); d += stepSize) {
+            spawnParticle(center.clone().add(Math.cos(d) * radius, 0, Math.sin(d) * radius));
+        }
     }
 }

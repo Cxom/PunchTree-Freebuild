@@ -1,21 +1,37 @@
 package net.punchtree.freebuild.billiards;
 
 import net.punchtree.freebuild.util.armorstand.ArmorStandUtils;
-import org.bukkit.Bukkit;
+import net.punchtree.freebuild.util.particle.ParticleShapes;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.inventory.EquipmentSlot;
 
 public class BilliardBall {
 
-    BilliardTable table;
+    private static final double COLLISION_ENERGY_LOSS = 1;
 
-    ArmorStand stand;
+    // a pool ball is 2¼"
+    // a pool table is 88 inches, a pool table is 8 blocks, so a block in game is 11 inches
+    // a block in game is 16 pixels
+    private static final double BALL_RADIUS = (2.25 / 44.) / 2.;
+    private static final double X_MAX = 1;
+    private static final double Z_MAX = 2;
 
-    public BilliardBall(BilliardTable table, Location spawnLocation) {
+    private BilliardTable table;
+    private double x;
+    private double z;
+    private Speed speed;
+
+    private ArmorStand stand;
+
+    public BilliardBall(BilliardTable table, double x, double z, Speed speed) {
         this.table = table;
+        this.x = x;
+        this.z = z;
+        this.speed = speed;
 
-        Bukkit.broadcastMessage("spawning a cue ball!");
+        Location spawnLocation = table.getLocationInWorld(x, z);
+
         stand = spawnLocation.getWorld().spawn(spawnLocation, ArmorStand.class, stand -> {
             stand.setGravity(false);
             stand.setMarker(true);
@@ -32,4 +48,108 @@ public class BilliardBall {
         stand.remove();
     }
 
+    public Location getLocation() {
+        return stand.getLocation();
+    }
+
+    public void collide(BilliardBall otherBall, double time) {
+        move(speed.getX() * time, speed.getZ() * time);
+        otherBall.move(otherBall.speed.getX() * time, otherBall.speed.getZ() * time);
+
+        double theta = Math.atan2(otherBall.z - z, otherBall.x - x);
+
+        double v1 = speed.getComponent(theta);
+        double v2 = otherBall.speed.getComponent(theta);
+
+        speed.addComponent(theta, (-v1+v2) * COLLISION_ENERGY_LOSS);
+        otherBall.speed.addComponent(theta, (-v2+v1) * COLLISION_ENERGY_LOSS);
+    }
+
+    public void move(double time) {
+        move(speed.getX() * time, speed.getZ() * time);
+    }
+
+    private void move(double x, double z) {
+        this.x += x;
+        this.z += z;
+
+        if (this.x < BALL_RADIUS) {
+            this.x = 2 * BALL_RADIUS - this.x;
+            speed.flipX();
+            table.markPhysicsForCollisionUpdate();
+        }
+
+        if (this.x > X_MAX - BALL_RADIUS) {
+            this.x = 2 * (X_MAX - BALL_RADIUS) - this.x;
+            speed.flipX();
+            table.markPhysicsForCollisionUpdate();
+        }
+
+        if (this.z < BALL_RADIUS) {
+            this.z = 2 * BALL_RADIUS - this.z;
+            speed.flipZ();
+            table.markPhysicsForCollisionUpdate();
+        }
+
+        if (this.z > Z_MAX - BALL_RADIUS) {
+            this.z = 2 * (Z_MAX - BALL_RADIUS) - this.z;
+            speed.flipZ();
+            table.markPhysicsForCollisionUpdate();
+        }
+    }
+
+    void updateDisplay() {
+        Location loc = table.getLocationInWorld(x, z);
+        stand.teleport(loc);
+        ParticleShapes.drawCircle(loc, BALL_RADIUS * 8., 8);
+    }
+
+    public double calculateNextCollision(BilliardBall otherBall) {
+        double dx = x - otherBall.x;
+        double dz = z - otherBall.z;
+        double dvx = speed.getX() - otherBall.speed.getX();
+        double dvz = speed.getZ() - otherBall.speed.getZ();
+
+        if (dvx == 0 && dvz == 0) {
+            // balls are moving in parallel
+            return Double.POSITIVE_INFINITY;
+        }
+
+        double dSpeed = dvx * dvx + dvz * dvz;
+        double b_half = (dx * dvx + dz * dvz);
+        double c = Math.pow((BALL_RADIUS + BALL_RADIUS), 2) * dSpeed - Math.pow(dvx * dz - dvz * dx, 2);
+
+        if (c < 0) {
+            // balls are moving away from each other
+            return Double.POSITIVE_INFINITY;
+        }
+
+        double start = (-b_half - Math.sqrt(c)) / dSpeed;
+        double end = (-b_half + Math.sqrt(c)) / dSpeed;
+
+        if (end < 0) {
+            // no positive zero means no collision
+            return Double.POSITIVE_INFINITY;
+        }
+
+        if (start + end < 0) {
+            // Large approximation of the fact that the balls will not collide?
+            // End is positive, so start must be MORE negative (midpoint/extrema occurs below 0)
+            // I don't know what this means in turns of approximation
+            return Double.POSITIVE_INFINITY;
+        }
+
+        if (start < 0) {
+            // balls are already colliding
+            // one positive zero because end >= 0
+            return 0;
+        }
+
+        // two non-negative zeros, return the smaller
+        return start;
+    }
+
+    public void setSpeed(double x, double z) {
+        this.speed = new Speed(x, z);
+    }
 }
