@@ -19,7 +19,9 @@ public class BilliardsManager {
 
     public Set<BilliardTable> getNearbyTables(Location location) {
         return billiardTables.stream()
-                .filter(table -> table.getCenter().distanceSquared(location) < NEAR_THRESHOLD * NEAR_THRESHOLD)
+                .filter(table ->
+                        table.getWorld().equals(location.getWorld())
+                         && table.getCenter().distanceSquared(location) < NEAR_THRESHOLD * NEAR_THRESHOLD)
                 .collect(Collectors.toSet());
     }
 
