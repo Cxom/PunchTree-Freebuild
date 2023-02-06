@@ -43,6 +43,11 @@ public class BilliardsCommand implements CommandExecutor {
                 nearbyTables.forEach(BilliardTable::shootMultiBall);
                 player.sendMessage(ChatColor.AQUA + "Shot multi ball!");
             }
+            case "rack" -> {
+                Set<BilliardTable> nearbyTables = billiardsManager.getNearbyTables(player.getLocation());
+                nearbyTables.forEach(BilliardTable::rackEightBall);
+                player.sendMessage(ChatColor.AQUA + "Freshly racked!");
+            }
             default -> player.sendMessage("Subcommand not recognized");
         }
 

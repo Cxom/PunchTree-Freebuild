@@ -2,6 +2,7 @@ package net.punchtree.freebuild.billiards;
 
 import net.punchtree.freebuild.util.armorstand.ArmorStandUtils;
 import net.punchtree.freebuild.util.particle.ParticleShapes;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.inventory.EquipmentSlot;
@@ -10,22 +11,26 @@ public class BilliardBall {
 
     private static final double COLLISION_ENERGY_LOSS = 1;
 
+    public static final Color RESIN_WHITE = Color.fromRGB(240, 232, 218);
+
     // a pool ball is 2¼"
     // a pool table is 88 inches, a pool table is 8 blocks, so a block in game is 11 inches
     // a block in game is 16 pixels
-    private static final double BALL_RADIUS = (2.25 / 44.) / 2.;
+    static final double BALL_RADIUS = (2.25 / 44.) / 2.;
     private static final double X_MAX = 1;
     private static final double Z_MAX = 2;
 
     private BilliardTable table;
+    private BallStyle ballStyle;
     private double x;
     private double z;
     private Speed speed;
 
     private ArmorStand stand;
 
-    public BilliardBall(BilliardTable table, double x, double z, Speed speed) {
+    public BilliardBall(BilliardTable table, BallStyle ballStyle, double x, double z, Speed speed) {
         this.table = table;
+        this.ballStyle = ballStyle;
         this.x = x;
         this.z = z;
         this.speed = speed;
@@ -42,6 +47,10 @@ public class BilliardBall {
             stand.setItem(EquipmentSlot.HAND, BilliardsItems.CUE_BALL);
             stand.addScoreboardTag("billiards");
         });
+    }
+
+    public BilliardBall(BilliardTable table, BallStyle ballStyle, BilliardTable.TablePosition tablePosition, Speed speed) {
+        this(table, ballStyle, tablePosition.x(), tablePosition.z(), speed);
     }
 
     public void remove() {
