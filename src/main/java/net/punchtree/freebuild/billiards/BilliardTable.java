@@ -15,10 +15,15 @@ public class BilliardTable {
 
     record TablePosition(double x, double z) {}
 
-    static final double CUE_BALL_SPEED = .02;
+    private static final double CUE_BALL_SPEED = .02;
+    private static final double SHOT_FORCE_MULTIPLIER = 0.025;
+    private static final double SHOT_REACH = 4.5;
+    private static final double HIT_BOX_HEIGHT = BilliardBall.BALL_RADIUS * 2;
+    private static final double HIT_BOX_HALF_WIDTH = BilliardBall.BALL_RADIUS;
 
     static final int TABLE_SHORT_SIZE = 8;
     static final int TABLE_LONG_SIZE = TABLE_SHORT_SIZE * 2;
+
     private final World world;
     private final int y, xMin, zMin, xMax, zMax;
     private final boolean isXShortAxis;
@@ -72,7 +77,11 @@ public class BilliardTable {
     }
 
     public Location getCenter() {
-        return new Location(world, (xMin + xMax) * .5, y, (zMin + zMax) * .5);
+        return getLocationInWorld(.5, 1);
+    }
+
+    public World getWorld() {
+        return world;
     }
 
     public void highlight() {
@@ -92,6 +101,63 @@ public class BilliardTable {
                 }
             }
         }.runTaskTimer(PunchTreeFreebuildPlugin.getInstance(), 0, 5);
+    }
+
+    public void takeShot(BilliardsShot shot) {
+        // This makes a shot aimed straight down still resolve in the direction the player is facing
+        // Perhaps it should choose a random direction instead?
+        Location playerLocationLookingLevel = shot.source().getLocation().clone();
+        playerLocationLookingLevel.setPitch(0);
+
+        Vector shotLineStart = shot.source().getEyeLocation().toVector();
+        Vector shotDirection = shot.source().getLocation().getDirection().normalize();
+        Vector shotLineEnd = shotLineStart.clone().add(shotDirection.multiply(SHOT_REACH));
+        Vector shotDirectionHorizontal = playerLocationLookingLevel.getDirection();
+
+        if (shotDirectionHorizontal.getY() != 0) {
+            throw new IllegalArgumentException("Shot direction must be horizontal");
+        }
+
+        Location pointOnPlane = cueBall.getLocation();
+        Vector planeForward = new Vector(-shotDirectionHorizontal.getX(), 0, -shotDirectionHorizontal.getZ());
+
+        if ( !lineCrossesTargetPlane(pointOnPlane, planeForward, shotLineStart, shotLineEnd) ) {
+            return;
+        }
+        Vector intersection = getPlaneLineIntersection(pointOnPlane, planeForward, shotLineStart, shotLineEnd);
+
+        // Check x and z distances from base of ball (ball location)
+        if (intersection.getY() > y + HIT_BOX_HEIGHT) {
+            return;
+        }
+        if (intersection.setY(y).distanceSquared(pointOnPlane.toVector()) > HIT_BOX_HALF_WIDTH * HIT_BOX_HALF_WIDTH) {
+            return;
+        }
+
+        // HIT!!!!
+
+        shotDirectionHorizontal.normalize(); // TODO this is going to fire in LOCAL rotation, not global!!!
+        // This means the puck will not shoot the way the player is facing,
+        shotDirectionHorizontal.multiply(shot.force() * SHOT_FORCE_MULTIPLIER);
+        cueBall.setSpeed(shotDirectionHorizontal.getX(), shotDirectionHorizontal.getZ());
+    }
+
+    /**
+     * THIS IS DIRECTIONAL
+     */
+    public static boolean lineCrossesTargetPlane(Location pointOnPlane, Vector planeForward, Vector start, Vector end) {
+        Vector lastDifference = pointOnPlane.toVector().subtract(start);
+        Vector currentDifference = pointOnPlane.toVector().subtract(end);
+        return lastDifference.dot(planeForward) < 0 && currentDifference.dot(planeForward) >= 0;
+    }
+
+    public static Vector getPlaneLineIntersection(Location pointOnPlane, Vector planeForward, Vector lineStart, Vector lineEnd) {
+        // Calculate plane intersection
+        Vector lineDirection = lineEnd.clone().subtract(lineStart);
+        Vector lineEndToTarget = pointOnPlane.toVector().subtract(lineStart);
+        double t = lineEndToTarget.dot(planeForward) / lineDirection.dot(planeForward);
+        Vector intersection = lineStart.clone().add(lineDirection.multiply(t));
+        return intersection;
     }
 
     @Override

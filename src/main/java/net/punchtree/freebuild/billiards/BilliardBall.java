@@ -35,7 +35,7 @@ public class BilliardBall {
         this.z = z;
         this.speed = speed;
 
-        Location spawnLocation = table.getLocationInWorld(x, z);
+        Location spawnLocation = getLocation();
 
         stand = spawnLocation.getWorld().spawn(spawnLocation, ArmorStand.class, stand -> {
             stand.setGravity(false);
@@ -58,7 +58,7 @@ public class BilliardBall {
     }
 
     public Location getLocation() {
-        return stand.getLocation();
+        return table.getLocationInWorld(x, z);
     }
 
     public void collide(BilliardBall otherBall, double time) {
@@ -108,7 +108,7 @@ public class BilliardBall {
     }
 
     void updateDisplay() {
-        Location loc = table.getLocationInWorld(x, z);
+        Location loc = getLocation();
         stand.teleport(loc);
         ParticleShapes.drawCircle(loc, BALL_RADIUS * 8., 8);
     }
