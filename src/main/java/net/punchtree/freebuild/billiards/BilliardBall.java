@@ -1,11 +1,14 @@
 package net.punchtree.freebuild.billiards;
 
+import com.destroystokyo.paper.ParticleBuilder;
 import net.punchtree.freebuild.util.armorstand.ArmorStandUtils;
 import net.punchtree.freebuild.util.particle.ParticleShapes;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.util.Vector;
 
 public class BilliardBall {
 
@@ -28,6 +31,8 @@ public class BilliardBall {
 
     private ArmorStand stand;
 
+    private Vector particleLineDirection;
+
     public BilliardBall(BilliardTable table, BallStyle ballStyle, double x, double z, Speed speed) {
         this.table = table;
         this.ballStyle = ballStyle;
@@ -47,6 +52,10 @@ public class BilliardBall {
             stand.setItem(EquipmentSlot.HAND, BilliardsItems.CUE_BALL);
             stand.addScoreboardTag("billiards");
         });
+
+        double randomAngle = Math.random() * 2 * Math.PI;
+        this.particleLineDirection = new Vector(Math.cos(randomAngle), 0, Math.sin(randomAngle));
+        particleLineDirection.normalize().multiply(BALL_RADIUS * BilliardTable.TABLE_SHORT_SIZE);
     }
 
     public BilliardBall(BilliardTable table, BallStyle ballStyle, BilliardTable.TablePosition tablePosition, Speed speed) {
@@ -106,11 +115,18 @@ public class BilliardBall {
             table.markPhysicsForCollisionUpdate();
         }
     }
-
+    
     void updateDisplay() {
         Location loc = getLocation();
         stand.teleport(loc);
-        ParticleShapes.drawCircle(loc, BALL_RADIUS * 8., 8);
+        ParticleShapes.setParticleBuilder(new ParticleBuilder(Particle.REDSTONE).color(ballStyle.color));
+        ParticleShapes.drawCircle(loc, BALL_RADIUS * BilliardTable.TABLE_SHORT_SIZE, 8);
+        if (ballStyle.hasStripe) {
+            ParticleShapes.setParticleBuilder(new ParticleBuilder(Particle.REDSTONE).color(BilliardBall.RESIN_WHITE));
+            Location lineStart = loc.clone().add(particleLineDirection);
+            Location lineEnd = loc.clone().subtract(particleLineDirection);
+            ParticleShapes.drawLine(lineStart, lineEnd, 4);
+        }
     }
 
     public double calculateNextCollision(BilliardBall otherBall) {
