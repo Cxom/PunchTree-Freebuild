@@ -57,11 +57,15 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
     private void registerCustomWorldguardFlags() {
         FlagRegistry flagRegistry = WorldGuard.getInstance().getFlagRegistry();
+        String NUMBER_OF_CLAIMS_FLAG_NAME = "number-of-claims";
         try {
-            NUMBER_OF_CLAIMS_FLAG = new IntegerFlag("number-of-claims");
+            NUMBER_OF_CLAIMS_FLAG = new IntegerFlag(NUMBER_OF_CLAIMS_FLAG_NAME);
             flagRegistry.register(NUMBER_OF_CLAIMS_FLAG);
         } catch (FlagConflictException fce) {
             Bukkit.getLogger().severe("Could not register our custom flag!");
+        } catch (IllegalStateException ise) {
+            // the plugin is being loaded after worldguard
+            NUMBER_OF_CLAIMS_FLAG = (IntegerFlag) flagRegistry.get(NUMBER_OF_CLAIMS_FLAG_NAME);
         }
     }
 
