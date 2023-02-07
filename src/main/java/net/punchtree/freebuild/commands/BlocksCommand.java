@@ -22,16 +22,16 @@ import java.util.List;
 
 public class BlocksCommand implements CommandExecutor, Listener {
     private final Inventory TEMPLATED_INVENTORY;
-    private static final ItemStack SCROLL_LEFT_ITEM;
-    private static final ItemStack SCROLL_RIGHT_ITEM;
+    private static final ItemStack SCROLL_UP_ITEM;
+    private static final ItemStack SCROLL_DOWN_ITEM;
     private static final ItemStack PLACEHOLDER_ITEM;
     private static final List<Material> MATERIALS;
     private static final List<ItemStack> CLICKABLE_ITEMS;
     private static final Component BLOCK_SHOP_TITLE;
     private static final int BLOCK_SHOP_SIZE = 45;
-    private static final int BLOCKS_PER_PAGE = 36;
-    private static final Component SCROLL_RIGHT_ITEM_NAME;
-    private static final Component SCROLL_LEFT_ITEM_NAME;
+    private static final int BLOCKS_PER_PAGE = 40;
+    private static final Component SCROLL_UP_ITEM_NAME;
+    private static final Component SCROLL_DOWN_ITEM_NAME;
     private static final Component PLACEHOLDER_ITEM_NAME;
     private static final List<Component> CLICKABLE_ITEM_LORE;
 
@@ -40,12 +40,12 @@ public class BlocksCommand implements CommandExecutor, Listener {
         BLOCK_SHOP_TITLE = Component
                 .text("Survival Block Depot")
                 .color(NamedTextColor.DARK_GRAY);
-        SCROLL_RIGHT_ITEM_NAME = Component
-                .text("Scroll Right")
+        SCROLL_UP_ITEM_NAME = Component
+                .text("Scroll Up")
                 .color(NamedTextColor.GOLD)
                 .decorate(TextDecoration.BOLD);
-        SCROLL_LEFT_ITEM_NAME = Component
-                .text("Scroll Left")
+        SCROLL_DOWN_ITEM_NAME = Component
+                .text("Scroll Down")
                 .color(NamedTextColor.GOLD)
                 .decorate(TextDecoration.BOLD);
         PLACEHOLDER_ITEM_NAME = Component.text("");
@@ -232,15 +232,15 @@ public class BlocksCommand implements CommandExecutor, Listener {
             CLICKABLE_ITEMS.add(clickableItem);
         }
 
-        SCROLL_LEFT_ITEM = new ItemStack(Material.AMETHYST_SHARD);
-        SCROLL_RIGHT_ITEM = SCROLL_LEFT_ITEM.clone();
+        SCROLL_DOWN_ITEM = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+        SCROLL_UP_ITEM = SCROLL_DOWN_ITEM.clone();
         PLACEHOLDER_ITEM = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
 
-        SCROLL_LEFT_ITEM.editMeta(meta -> {
-            meta.displayName(SCROLL_LEFT_ITEM_NAME);
+        SCROLL_UP_ITEM.editMeta(meta -> {
+            meta.displayName(SCROLL_UP_ITEM_NAME);
         });
-        SCROLL_RIGHT_ITEM.editMeta(meta -> {
-            meta.displayName(SCROLL_RIGHT_ITEM_NAME);
+        SCROLL_DOWN_ITEM.editMeta(meta -> {
+            meta.displayName(SCROLL_DOWN_ITEM_NAME);
         });
         PLACEHOLDER_ITEM.editMeta(meta -> {
             meta.displayName(PLACEHOLDER_ITEM_NAME);
@@ -252,12 +252,11 @@ public class BlocksCommand implements CommandExecutor, Listener {
         TEMPLATED_INVENTORY = Bukkit.createInventory(null, BLOCK_SHOP_SIZE, BLOCK_SHOP_TITLE);
 
         //Apply (placeholder & scroll items) to the left and right sides
-        for(int row = 0; row < BLOCK_SHOP_SIZE; row += 9) {
+        for(int row = 8; row < BLOCK_SHOP_SIZE; row += 9) {
             TEMPLATED_INVENTORY.setItem(row, PLACEHOLDER_ITEM);
-            TEMPLATED_INVENTORY.setItem(row+8, PLACEHOLDER_ITEM);
         }
-        TEMPLATED_INVENTORY.setItem(18, SCROLL_LEFT_ITEM);
-        TEMPLATED_INVENTORY.setItem(26, SCROLL_RIGHT_ITEM);
+        TEMPLATED_INVENTORY.setItem(17, SCROLL_UP_ITEM);
+        TEMPLATED_INVENTORY.setItem(35, SCROLL_DOWN_ITEM);
     }
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -278,10 +277,10 @@ public class BlocksCommand implements CommandExecutor, Listener {
         ItemStack clickedItem = event.getCurrentItem();
         if(clickedItem == null || clickedItem.equals(PLACEHOLDER_ITEM) || clickedInventory == null) {return;}
 
-        if(clickedItem.equals(SCROLL_LEFT_ITEM)) {
-            scrollInventory(-7, clickedInventory);
-        }else if(clickedItem.equals(SCROLL_RIGHT_ITEM)) {
-            scrollInventory(7, clickedInventory);
+        if(clickedItem.equals(SCROLL_UP_ITEM)) {
+            scrollInventory(-8, clickedInventory);
+        }else if(clickedItem.equals(SCROLL_DOWN_ITEM)) {
+            scrollInventory(8, clickedInventory);
         }else {
             if(CLICKABLE_ITEMS.contains(clickedItem)) {
                 ItemStack itemToGive = new ItemStack(clickedItem.getType(), 64);
@@ -306,7 +305,7 @@ public class BlocksCommand implements CommandExecutor, Listener {
     }
 
     private void scrollInventory(int amountToScroll, Inventory invToScroll) {
-        int clickableItemIndex = CLICKABLE_ITEMS.indexOf(invToScroll.getItem(1));
+        int clickableItemIndex = CLICKABLE_ITEMS.indexOf(invToScroll.getItem(0));
 
         if (clickableItemIndex == 0 && amountToScroll <= 0) return;
         if (clickableItemIndex + BLOCKS_PER_PAGE >= CLICKABLE_ITEMS.size() - 1 && amountToScroll >= 0) return;
