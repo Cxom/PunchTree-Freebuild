@@ -43,24 +43,27 @@ public class BilliardTable {
         // balls are touching, so hypotenuse is 2 * BALL_RADIUS
         // So down is BALL_RADIUS * sqrt(3) and left is BALL_RADIUS
         double sqrt3 = Math.sqrt(3);
-        TablePosition SECOND_ROW_START = new TablePosition(FOOT_SPOT.x() - BilliardBall.BALL_RADIUS, FOOT_SPOT.z() + (BilliardBall.BALL_RADIUS * sqrt3));
+        double epsilon = 0.001;
+        double halfHorizontalSpace = BilliardBall.BALL_RADIUS + epsilon;
+        double verticalSpace = halfHorizontalSpace * sqrt3;
+        TablePosition SECOND_ROW_START = new TablePosition(FOOT_SPOT.x() - halfHorizontalSpace, FOOT_SPOT.z() + verticalSpace);
         TRIANGLE_RACK_POSITIONS.add(SECOND_ROW_START);
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(SECOND_ROW_START.x() + 2 * BilliardBall.BALL_RADIUS, SECOND_ROW_START.z()));
-        TablePosition THIRD_ROW_START = new TablePosition(SECOND_ROW_START.x() - BilliardBall.BALL_RADIUS, SECOND_ROW_START.z() + (BilliardBall.BALL_RADIUS * sqrt3));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(SECOND_ROW_START.x() + 2 * halfHorizontalSpace, SECOND_ROW_START.z()));
+        TablePosition THIRD_ROW_START = new TablePosition(SECOND_ROW_START.x() - halfHorizontalSpace, SECOND_ROW_START.z() + verticalSpace);
         TRIANGLE_RACK_POSITIONS.add(THIRD_ROW_START);
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(THIRD_ROW_START.x() + 2 * BilliardBall.BALL_RADIUS, THIRD_ROW_START.z()));
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(THIRD_ROW_START.x() + 4 * BilliardBall.BALL_RADIUS, THIRD_ROW_START.z()));
-        TablePosition FOURTH_ROW_START = new TablePosition(THIRD_ROW_START.x() - BilliardBall.BALL_RADIUS, THIRD_ROW_START.z() + (BilliardBall.BALL_RADIUS * sqrt3));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(THIRD_ROW_START.x() + 2 * halfHorizontalSpace, THIRD_ROW_START.z()));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(THIRD_ROW_START.x() + 4 * halfHorizontalSpace, THIRD_ROW_START.z()));
+        TablePosition FOURTH_ROW_START = new TablePosition(THIRD_ROW_START.x() - halfHorizontalSpace, THIRD_ROW_START.z() + verticalSpace);
         TRIANGLE_RACK_POSITIONS.add(FOURTH_ROW_START);
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FOURTH_ROW_START.x() + 2 * BilliardBall.BALL_RADIUS, FOURTH_ROW_START.z()));
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FOURTH_ROW_START.x() + 4 * BilliardBall.BALL_RADIUS, FOURTH_ROW_START.z()));
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FOURTH_ROW_START.x() + 6 * BilliardBall.BALL_RADIUS, FOURTH_ROW_START.z()));
-        TablePosition FIFTH_ROW_START = new TablePosition(FOURTH_ROW_START.x() - BilliardBall.BALL_RADIUS, FOURTH_ROW_START.z() + (BilliardBall.BALL_RADIUS * sqrt3));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FOURTH_ROW_START.x() + 2 * halfHorizontalSpace, FOURTH_ROW_START.z()));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FOURTH_ROW_START.x() + 4 * halfHorizontalSpace, FOURTH_ROW_START.z()));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FOURTH_ROW_START.x() + 6 * halfHorizontalSpace, FOURTH_ROW_START.z()));
+        TablePosition FIFTH_ROW_START = new TablePosition(FOURTH_ROW_START.x() - halfHorizontalSpace, FOURTH_ROW_START.z() + verticalSpace);
         TRIANGLE_RACK_POSITIONS.add(FIFTH_ROW_START);
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FIFTH_ROW_START.x() + 2 * BilliardBall.BALL_RADIUS, FIFTH_ROW_START.z()));
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FIFTH_ROW_START.x() + 4 * BilliardBall.BALL_RADIUS, FIFTH_ROW_START.z()));
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FIFTH_ROW_START.x() + 6 * BilliardBall.BALL_RADIUS, FIFTH_ROW_START.z()));
-        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FIFTH_ROW_START.x() + 8 * BilliardBall.BALL_RADIUS, FIFTH_ROW_START.z()));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FIFTH_ROW_START.x() + 2 * halfHorizontalSpace, FIFTH_ROW_START.z()));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FIFTH_ROW_START.x() + 4 * halfHorizontalSpace, FIFTH_ROW_START.z()));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FIFTH_ROW_START.x() + 6 * halfHorizontalSpace, FIFTH_ROW_START.z()));
+        TRIANGLE_RACK_POSITIONS.add(new TablePosition(FIFTH_ROW_START.x() + 8 * halfHorizontalSpace, FIFTH_ROW_START.z()));
     }
 
     public BilliardTable(World world, int y, int xMin, int zMin, int xMax, int zMax) {

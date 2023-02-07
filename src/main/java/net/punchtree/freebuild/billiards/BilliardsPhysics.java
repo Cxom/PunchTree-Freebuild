@@ -1,5 +1,6 @@
 package net.punchtree.freebuild.billiards;
 
+import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class BilliardsPhysics extends BukkitRunnable {
     @Override
     public void run() {
         double timePassedThisStep = 0;
+        int collisionFailsafe = 0;
         while (timePassedThisStep + timeUntilNextCollision < TIME_STEP) {
             for (BilliardBall ball : balls) {
                 if (ball == first) {
@@ -30,6 +32,13 @@ public class BilliardsPhysics extends BukkitRunnable {
             }
             timePassedThisStep += timeUntilNextCollision;
             doCollisionUpdate();
+            ++collisionFailsafe;
+            if (collisionFailsafe > 100) {
+                Bukkit.getLogger().severe("Collision failsafe triggered - resetting pool table");
+                balls.forEach(BilliardBall::remove);
+                balls.clear();
+                return;
+            }
         }
         // adding time passed this step makes this zoom up to the last collision that happened during this tick
         // when it begins calculating for the next tick
