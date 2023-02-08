@@ -13,6 +13,11 @@ commands:
     aliases: [shop]
     usage: Invalid command! Please type /blocks or /shop to access the remote block shop.
     permission: ptfb.commands.blocks
+  vskip:
+    description: Vote to skip the current event. (Storms / Night-time)
+    aliases: [voteskip,skipweather,skipnight]
+    usage:  /vskip <weather / time>
+    permission: ptfb.commands.ambientvoting.voteskip
   claimtest:
     description: A testing command to aid in development of the claim system
     usage: /claimtest <subcommand>
