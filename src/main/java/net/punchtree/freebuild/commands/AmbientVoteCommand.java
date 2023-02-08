@@ -154,10 +154,6 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
     public void onWeatherChange(WeatherChangeEvent event) {
         if(!event.getWorld().getName().equals("world")) return;
         if(event.isCancelled() || !event.toWeatherState()) return;
-        Bukkit.getLogger().log(Level.INFO, "WeatherChangeEvent Fired.");
-        Bukkit.getLogger().log(Level.INFO, "toWeatherState: " + event.toWeatherState());
-        Bukkit.getLogger().log(Level.INFO, "worldName: " + event.getWorld().getName());
-        Bukkit.getLogger().log(Level.INFO, "cancelled: " + event.isCancelled());
         currentAudience = Audience.audience(Bukkit.getOnlinePlayers());
         currentWeatherBossbar.name(appendVoteCount());
 
