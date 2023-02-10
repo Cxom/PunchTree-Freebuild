@@ -23,19 +23,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Level;
 
 public class AmbientVoteCommand implements CommandExecutor, Listener {
-
-    private static final Component chatHeader;
-    private static final Component chatFooter;
     private static final Component skipWeatherText;
     private static final Component weatherBossbarTitle;
     private static final Component skipWeatherFailedText;
     private static final Component skipWeatherSuccessText;
-    private static final Component builtWeatherMessage;
-    private static final Component builtWeatherFailedMessage;
-    private static final Component builtWeatherSuccessMessage;
     private static final Component voteCastMessage;
     private static final Component voteAlreadyCastMessage;
     private static final Component notStormingMessage;
@@ -48,12 +41,6 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
     private final PunchTreeFreebuildPlugin ptfbInstance = PunchTreeFreebuildPlugin.getInstance();
 
     static {
-        chatHeader = Component
-                .text("-=-=-=-=-=-= ", NamedTextColor.GREEN)
-                .append(Component.text("Punch", NamedTextColor.RED))
-                .append(Component.text("Tree Ambient Voting =-=-=-=-=-=-\n", NamedTextColor.GREEN));
-        chatFooter = Component.text("\n-----------------------------------------------", NamedTextColor.GREEN);
-
         weatherBossbarTitle = Component
                 .text("Type ", NamedTextColor.AQUA)
                 .append(Component.text("/vskip weather ", NamedTextColor.GOLD))
@@ -73,8 +60,10 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
 
         skipWeatherText = Component
                 .text("Looks like the weather has taken a turn for the worse!\n", NamedTextColor.AQUA)
-                .append(weatherBossbarTitle)
-                .clickEvent(ClickEvent.suggestCommand("/vskip weather"));
+                .append(Component.text("Type or click ", NamedTextColor.AQUA))
+                .append(Component.text("[/vskip weather] ", NamedTextColor.GOLD))
+                .append(Component.text("to vote skip the storm.", NamedTextColor.AQUA))
+                .clickEvent(ClickEvent.runCommand("/vskip weather"));
 
         voteCastMessage = Component
                 .text("Your vote has been cast!", NamedTextColor.AQUA);
@@ -88,9 +77,6 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
         noActiveVoteMessage = Component
                 .text("There's no vote happening right now!", NamedTextColor.RED);
 
-        builtWeatherMessage = chatHeader.append(skipWeatherText).append(chatFooter);
-        builtWeatherFailedMessage = chatHeader.append(skipWeatherFailedText).append(chatFooter);
-        builtWeatherSuccessMessage = chatHeader.append(skipWeatherSuccessText).append(chatFooter);
         currentWeatherBossbar = BossBar.bossBar(weatherBossbarTitle, 1.0f, BossBar.Color.GREEN, BossBar.Overlay.NOTCHED_20);
     }
 
@@ -160,7 +146,7 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
         Audience permissibleAudience =  currentAudience.filterAudience(audience ->
                 audience instanceof Player p && p.hasPermission("ptfb.commands.ambientvoting.notify"));
 
-        permissibleAudience.sendMessage(builtWeatherMessage);
+        permissibleAudience.sendMessage(skipWeatherText);
         permissibleAudience.showBossBar(currentWeatherBossbar);
         activeWeatherTask = new BukkitRunnable() {
             @Override
@@ -182,9 +168,9 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
                 if(currentWeatherBossbar.progress() == 0.0f || currentWeatherVoters.size() >= calculateRequiredVotes()) {
 
                     if(currentWeatherVoters.size() < calculateRequiredVotes()) {
-                        permissibleAudience.sendMessage(builtWeatherFailedMessage);
+                        permissibleAudience.sendMessage(skipWeatherFailedText);
                     }else {
-                        permissibleAudience.sendMessage(builtWeatherSuccessMessage);
+                        permissibleAudience.sendMessage(skipWeatherSuccessText);
                         Objects.requireNonNull(Bukkit.getWorld("world")).setStorm(false);
                     }
                     this.cancel();
@@ -219,7 +205,7 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
     }
 
     private int calculateRequiredVotes() {
-        return (int) (Math.max(Bukkit.getOnlinePlayers().size() * 0.7f, 1f));
+        return (int) (Math.max(Bukkit.getOnlinePlayers().size() * 0.55f, 1f));
     }
 
     private Component appendVoteCount() {
