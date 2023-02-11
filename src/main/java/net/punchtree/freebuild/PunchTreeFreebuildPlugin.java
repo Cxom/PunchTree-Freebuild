@@ -10,12 +10,16 @@ import net.punchtree.freebuild.billiards.BilliardsShootListener;
 import net.punchtree.freebuild.claiming.commands.ClaimTestingCommand;
 import net.punchtree.freebuild.commands.AmbientVoteCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
+import net.punchtree.freebuild.towerdefense.TowerDefenseMapManager;
+import net.punchtree.freebuild.towerdefense.TowerDefenseTestingCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
     private static PunchTreeFreebuildPlugin instance;
+    private TowerDefenseMapManager towerDefenseMapManager;
+
     public static PunchTreeFreebuildPlugin getInstance() {
         return instance;
     }
@@ -38,6 +42,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         billiardsManager = new BilliardsManager();
         blocksCommand = new BlocksCommand();
         ambientVoteCommand = new AmbientVoteCommand();
+        towerDefenseMapManager = new TowerDefenseMapManager();
 
         setCommandExecutors();
 
@@ -49,6 +54,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         getCommand("vskip").setExecutor(ambientVoteCommand);
         getCommand("claimtest").setExecutor(new ClaimTestingCommand());
         getCommand("billiards").setExecutor(new BilliardsCommand(billiardsManager));
+        getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager));
     }
 
     private void registerEvents() {
@@ -76,5 +82,6 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     public void onDisable() {
         billiardsManager.onDisable();
         ambientVoteCommand.cancelAmbientVoteTasks();
+        towerDefenseMapManager.onDisable();
     }
 }

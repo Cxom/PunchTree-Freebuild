@@ -1,8 +1,8 @@
 package net.punchtree.freebuild.billiards;
 
 import com.destroystokyo.paper.ParticleBuilder;
-import net.punchtree.freebuild.util.armorstand.ArmorStandUtils;
 import net.punchtree.freebuild.util.particle.ParticleShapes;
+import net.punchtree.util.armorstand.ArmorStandUtils;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -119,13 +119,13 @@ public class BilliardBall {
     void updateDisplay() {
         Location loc = getLocation();
         stand.teleport(loc);
-        ParticleShapes.setParticleBuilder(new ParticleBuilder(Particle.REDSTONE).color(ballStyle.color));
-        ParticleShapes.drawCircle(loc, BALL_RADIUS * BilliardTable.TABLE_SHORT_SIZE, 8);
+        ParticleShapes.setParticleBuilder(new ParticleBuilder(Particle.REDSTONE).color(ballStyle.color, .6f));
+        ParticleShapes.drawCircle(loc, BALL_RADIUS * BilliardTable.TABLE_SHORT_SIZE, 10);
         if (ballStyle.hasStripe) {
-            ParticleShapes.setParticleBuilder(new ParticleBuilder(Particle.REDSTONE).color(BilliardBall.RESIN_WHITE));
+            ParticleShapes.setParticleBuilder(new ParticleBuilder(Particle.REDSTONE).color(BilliardBall.RESIN_WHITE, .6f));
             Location lineStart = loc.clone().add(particleLineDirection);
             Location lineEnd = loc.clone().subtract(particleLineDirection);
-            ParticleShapes.drawLine(lineStart, lineEnd, 4);
+            ParticleShapes.spawnParticleLine(lineStart, lineEnd, 5);
         }
     }
 

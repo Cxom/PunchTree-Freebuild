@@ -195,7 +195,7 @@ public class BilliardTable {
         randomDirection = new Vector(Math.cos(.25 * Math.PI), 0, Math.sin(.25 * Math.PI));
         randomDirection.multiply(CUE_BALL_SPEED);
         cueBall.setSpeed(randomDirection.getX(), randomDirection.getZ());
-        ParticleShapes.drawLine(cueBall.getLocation(), cueBall.getLocation().clone().add(randomDirection.multiply(2)), 10);
+        ParticleShapes.spawnParticleLine(cueBall.getLocation(), cueBall.getLocation().clone().add(randomDirection.multiply(2)), 10);
     }
 
 

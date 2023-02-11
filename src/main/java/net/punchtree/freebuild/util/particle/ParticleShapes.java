@@ -1,7 +1,6 @@
 package net.punchtree.freebuild.util.particle;
 
 import com.destroystokyo.paper.ParticleBuilder;
-import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -24,13 +23,13 @@ public class ParticleShapes {
     }
 
     public static void drawQuad(Location aa, Location ab, Location ba, Location bb, int steps) {
-        drawLine(aa, ab, steps);
-        drawLine(ab, bb, steps);
-        drawLine(aa, ba, steps);
-        drawLine(ba, bb, steps);
+        spawnParticleLine(aa, ab, steps);
+        spawnParticleLine(ab, bb, steps);
+        spawnParticleLine(aa, ba, steps);
+        spawnParticleLine(ba, bb, steps);
     }
 
-    public static void drawLine(Location a, Location b, int steps) {
+    public static void spawnParticleLine(Location a, Location b, int steps) {
         Vector difference = b.clone().toVector().subtract(a.toVector());
         difference.multiply(1d/(steps-1));
         // change <= vs < for endpoint
