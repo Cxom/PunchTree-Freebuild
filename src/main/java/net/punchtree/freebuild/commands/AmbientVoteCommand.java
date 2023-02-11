@@ -1,13 +1,11 @@
 package net.punchtree.freebuild.commands;
 
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.audience.ForwardingAudience;
-import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
-import org.bukkit.Bukkit;
+import net.punchtree.freebuild.ambientvoting.Vote;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -16,27 +14,17 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 public class AmbientVoteCommand implements CommandExecutor, Listener {
     private static final Component skipWeatherText;
     private static final Component weatherBossbarTitle;
     private static final Component skipWeatherFailedText;
     private static final Component skipWeatherSuccessText;
-    private static final Component voteCastMessage;
-    private static final Component voteAlreadyCastMessage;
     private static final Component notStormingMessage;
-    private static final Component noActiveVoteMessage;
-    private static final BossBar currentWeatherBossbar;
-    private static final List<Player> currentWeatherVoters = new ArrayList<>();
-    private static ForwardingAudience currentAudience;
-    private static BukkitTask activeWeatherTask = null;
+    private Vote activeWeatherVote = null;
+    private BukkitTask activeWeatherTask = null;
 
     private final PunchTreeFreebuildPlugin ptfbInstance = PunchTreeFreebuildPlugin.getInstance();
 
@@ -65,41 +53,18 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
                 .append(Component.text("to vote skip the storm.", NamedTextColor.AQUA))
                 .clickEvent(ClickEvent.runCommand("/vskip weather"));
 
-        voteCastMessage = Component
-                .text("Your vote has been cast!", NamedTextColor.AQUA);
-
-        voteAlreadyCastMessage = Component
-                .text("Your vote has already been cast!", NamedTextColor.RED);
-
         notStormingMessage = Component
                 .text("Its not storming right now!", NamedTextColor.RED);
-
-        noActiveVoteMessage = Component
-                .text("There's no vote happening right now!", NamedTextColor.RED);
-
-        currentWeatherBossbar = BossBar.bossBar(weatherBossbarTitle, 1.0f, BossBar.Color.GREEN, BossBar.Overlay.NOTCHED_20);
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if(!(sender instanceof Player player)) return true;
+        World worldToSkip = player.getWorld();
 
         switch (label) {
             case "skipweather" -> {
-                if(!Objects.requireNonNull(Bukkit.getWorld("world")).hasStorm()){
-                    player.sendMessage(notStormingMessage);
-                    return true;
-                }
-                if(activeWeatherTask == null) {
-                    player.sendMessage(noActiveVoteMessage);
-                    return true;
-                }
-                if(currentWeatherVoters.contains(player)) {
-                    player.sendMessage(voteAlreadyCastMessage);
-                    return true;
-                }
-                currentWeatherVoters.add(player);
-                player.sendMessage(voteCastMessage);
+                attemptWeatherSkipVote(player, worldToSkip);
                 return true;
             }
             case "skipnight" -> {
@@ -107,22 +72,10 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
             }
             default -> {
                 if (args.length == 0) return false;
+
                 switch (args[0]) {
                     case "weather", "storm" -> {
-                        if(!Objects.requireNonNull(Bukkit.getWorld("world")).hasStorm()){
-                            player.sendMessage(notStormingMessage);
-                            return true;
-                        }
-                        if(activeWeatherTask == null) {
-                            player.sendMessage(noActiveVoteMessage);
-                            return true;
-                        }
-                        if(currentWeatherVoters.contains(player)) {
-                            player.sendMessage(voteAlreadyCastMessage);
-                            return true;
-                        }
-                        currentWeatherVoters.add(player);
-                        player.sendMessage(voteCastMessage);
+                        attemptWeatherSkipVote(player, worldToSkip);
                         return true;
                     }
                     case "night", "time" -> {
@@ -136,85 +89,42 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
         }
     }
 
+    private void attemptWeatherSkipVote(Player player, World worldForSkip) {
+        if(!worldForSkip.hasStorm()){
+            player.sendMessage(notStormingMessage);
+            return;
+        }
+        activeWeatherVote.castVote(player);
+    }
+
     @EventHandler
     public void onWeatherChange(WeatherChangeEvent event) {
-        if(!event.getWorld().getName().equals("world")) return;
+        World currentWorld = event.getWorld();
+        if(!currentWorld.getName().equals("world")) return;
         if(event.isCancelled() || !event.toWeatherState()) return;
-        currentAudience = Audience.audience(Bukkit.getOnlinePlayers());
-        currentWeatherBossbar.name(appendVoteCount());
 
-        Audience permissibleAudience =  currentAudience.filterAudience(audience ->
-                audience instanceof Player p && p.hasPermission("ptfb.commands.ambientvoting.notify"));
-
-        permissibleAudience.sendMessage(skipWeatherText);
-        permissibleAudience.showBossBar(currentWeatherBossbar);
-        activeWeatherTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                currentAudience = Audience.audience(Bukkit.getOnlinePlayers());
-                if(this.isCancelled()) {
-                    restoreDefaults();
-                    return;
-                }
-                if(Objects.requireNonNull(Bukkit.getWorld("world")).isClearWeather()) {
-                    this.cancel();
-                    restoreDefaults();
-                    return;
-                }
-
-                Audience permissibleAudience =  currentAudience.filterAudience(audience ->
-                        audience instanceof Player p && p.hasPermission("ptfb.commands.ambientvoting.notify"));
-
-                if(currentWeatherBossbar.progress() == 0.0f || currentWeatherVoters.size() >= calculateRequiredVotes()) {
-
-                    if(currentWeatherVoters.size() < calculateRequiredVotes()) {
-                        permissibleAudience.sendMessage(skipWeatherFailedText);
-                    }else {
-                        permissibleAudience.sendMessage(skipWeatherSuccessText);
-                        Objects.requireNonNull(Bukkit.getWorld("world")).setStorm(false);
+        activeWeatherVote = new Vote(
+                skipWeatherText,
+                skipWeatherSuccessText,
+                skipWeatherFailedText,
+                weatherBossbarTitle,
+                0.6f,
+                voteResult -> {
+                    if(voteResult) {
+                        currentWorld.setStorm(false);
                     }
-                    this.cancel();
-                    restoreDefaults();
-                    return;
-                }
-                currentWeatherBossbar.progress(Math.max(currentWeatherBossbar.progress() - 0.05f, 0.0f));
-                currentWeatherBossbar.name(appendVoteCount());
-                permissibleAudience.showBossBar(currentWeatherBossbar);
-            }
-        }.runTaskTimer(ptfbInstance, 20L, 20L);
+                });
+        activeWeatherTask = activeWeatherVote.runTaskTimer(ptfbInstance, 20L, 20L);
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        currentWeatherVoters.remove(event.getPlayer());
-    }
-
-    public void restoreDefaults() {
-        currentAudience.hideBossBar(currentWeatherBossbar);
-        currentWeatherBossbar.name(appendVoteCount());
-        currentWeatherBossbar.progress(1.0f);
-        currentWeatherVoters.clear();
-        activeWeatherTask = null;
+        activeWeatherVote.removeVote(event.getPlayer());
     }
 
     public void cancelAmbientVoteTasks() {
         if(activeWeatherTask != null && !activeWeatherTask.isCancelled()) {
             activeWeatherTask.cancel();
-            restoreDefaults();
         }
-    }
-
-    private int calculateRequiredVotes() {
-        return (int) (Math.max(Bukkit.getOnlinePlayers().size() * 0.55f, 1f));
-    }
-
-    private Component appendVoteCount() {
-        return weatherBossbarTitle
-                .append(Component.text(" : ")
-                .append(Component.text(
-                        currentWeatherVoters.size()
-                        + "/"
-                        + calculateRequiredVotes()))
-                .color(NamedTextColor.GOLD));
     }
 }
