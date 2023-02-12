@@ -113,7 +113,8 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
                     if(voteResult) {
                         currentWorld.setStorm(false);
                     }
-                });
+                },
+                currentWorld::hasStorm);
         activeWeatherTask = activeWeatherVote.runTaskTimer(ptfbInstance, 20L, 20L);
     }
 

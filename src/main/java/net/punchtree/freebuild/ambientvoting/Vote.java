@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class Vote extends BukkitRunnable {
     private final Component startMessage;
@@ -22,6 +23,7 @@ public class Vote extends BukkitRunnable {
     private final Component progressBarTitle;
     private final BossBar progressBar;
     private final Consumer<Boolean> onVoteEnd;
+    private final Supplier<Boolean> shouldCancel;
     private Audience currentAudience;
     private final float requiredVotePercentage;
     private final HashSet<UUID> activeVoters = new HashSet<>();
@@ -35,7 +37,7 @@ public class Vote extends BukkitRunnable {
     private static final Component noActiveVoteMessage = Component
             .text("There's no vote happening right now!", NamedTextColor.RED);
 
-    public Vote(Component startMessage, Component successMessage, Component failureMessage, Component progressBarTitle, float requiredVotePercentage, Consumer<Boolean> onVoteEnd) {
+    public Vote(Component startMessage, Component successMessage, Component failureMessage, Component progressBarTitle, float requiredVotePercentage, Consumer<Boolean> onVoteEnd, Supplier<Boolean> shouldCancel) {
 
         this.startMessage = startMessage;
         this.successMessage = successMessage;
@@ -44,12 +46,20 @@ public class Vote extends BukkitRunnable {
         this.requiredVotePercentage = requiredVotePercentage;
         this.progressBar = BossBar.bossBar(appendVoteCount(), 1.0f, BossBar.Color.GREEN, BossBar.Overlay.NOTCHED_20);
         this.onVoteEnd = onVoteEnd;
+        this.shouldCancel = shouldCancel;
         this.currentAudience = Audience.audience(Bukkit.getOnlinePlayers());
     }
 
     @Override
     public void run() {
         currentAudience = Audience.audience(Bukkit.getOnlinePlayers());
+
+        if(shouldCancel.get()) {
+            this.cancel();
+            currentAudience.hideBossBar(progressBar);
+            return;
+        }
+
         if (progressBar.progress() == 0.0f || activeVoters.size() >= calculateRequiredVotes()) {
 
             if (activeVoters.size() < calculateRequiredVotes()) {
