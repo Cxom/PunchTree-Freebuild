@@ -10,7 +10,9 @@ import net.punchtree.freebuild.billiards.BilliardsShootListener;
 import net.punchtree.freebuild.claiming.commands.ClaimTestingCommand;
 import net.punchtree.freebuild.commands.AmbientVoteCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
+import net.punchtree.freebuild.towerdefense.TowerBuildingListener;
 import net.punchtree.freebuild.towerdefense.TowerDefenseMapManager;
+import net.punchtree.freebuild.towerdefense.TowerDefensePlayerManager;
 import net.punchtree.freebuild.towerdefense.TowerDefenseTestingCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,6 +21,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
     private static PunchTreeFreebuildPlugin instance;
     private TowerDefenseMapManager towerDefenseMapManager;
+    private TowerDefensePlayerManager towerDefensePlayerManager;
 
     public static PunchTreeFreebuildPlugin getInstance() {
         return instance;
@@ -43,6 +46,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         blocksCommand = new BlocksCommand();
         ambientVoteCommand = new AmbientVoteCommand();
         towerDefenseMapManager = new TowerDefenseMapManager();
+        towerDefensePlayerManager = new TowerDefensePlayerManager();
 
         setCommandExecutors();
 
@@ -54,7 +58,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         getCommand("vskip").setExecutor(ambientVoteCommand);
         getCommand("claimtest").setExecutor(new ClaimTestingCommand());
         getCommand("billiards").setExecutor(new BilliardsCommand(billiardsManager));
-        getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager));
+        getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
     }
 
     private void registerEvents() {
@@ -62,6 +66,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new BilliardsShootListener(billiardsManager), this);
         Bukkit.getPluginManager().registerEvents(new JebSheepGiveFreeDye(), this);
         Bukkit.getPluginManager().registerEvents(ambientVoteCommand, this);
+        Bukkit.getPluginManager().registerEvents(new TowerBuildingListener(towerDefensePlayerManager), this);
     }
 
     private void registerCustomWorldguardFlags() {

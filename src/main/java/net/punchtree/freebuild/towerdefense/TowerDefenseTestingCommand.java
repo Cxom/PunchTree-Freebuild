@@ -8,10 +8,19 @@ import org.bukkit.entity.Player;
 
 public class TowerDefenseTestingCommand implements CommandExecutor {
 
-    private final TowerDefenseMapManager towerDefenseMapManager;
+    // ===== Placing tower functionality =====
+    // Right clicking on placeable ground opens a menu for choosing a tower type
+    // Upon choosing a tower type, the menu is closed, and the game attempts to place the tower
+    // If the tower can be placed (its footprint is unoccupied), the tower is placed
+    // When the tower is ticked, it checks if it has any enemies in range
+    // If it does, it attacks the furthest-along enemy
 
-    public TowerDefenseTestingCommand(TowerDefenseMapManager towerDefenseMapManager) {
+    private final TowerDefenseMapManager towerDefenseMapManager;
+    private final TowerDefensePlayerManager towerDefensePlayerManager;
+
+    public TowerDefenseTestingCommand(TowerDefenseMapManager towerDefenseMapManager, TowerDefensePlayerManager towerDefensePlayerManager) {
         this.towerDefenseMapManager = towerDefenseMapManager;
+        this.towerDefensePlayerManager = towerDefensePlayerManager;
     }
 
     @Override
@@ -38,6 +47,7 @@ public class TowerDefenseTestingCommand implements CommandExecutor {
         switch (args[0]) {
             case "test-path" -> map.testPaths();
             case "spawn-mob" -> map.spawnMob();
+            case "register-me" -> towerDefensePlayerManager.registerPlayer(player);
         }
 
         return true;
