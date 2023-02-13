@@ -29,6 +29,7 @@ public class TowerBuildingListener implements Listener {
         TowerDefensePlayer tdPlayer = getTowerDefensePlayer(event.getPlayer());
         if (tdPlayer == null) return;
 
+        tdPlayer.setSelectedTowerBuildLocation(event.getClickedBlock().getLocation());
         showTowerSelectionMenu(tdPlayer);
     }
 

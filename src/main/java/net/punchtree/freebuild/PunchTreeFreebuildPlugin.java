@@ -10,10 +10,7 @@ import net.punchtree.freebuild.billiards.BilliardsShootListener;
 import net.punchtree.freebuild.claiming.commands.ClaimTestingCommand;
 import net.punchtree.freebuild.commands.AmbientVoteCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
-import net.punchtree.freebuild.towerdefense.TowerBuildingListener;
-import net.punchtree.freebuild.towerdefense.TowerDefenseMapManager;
-import net.punchtree.freebuild.towerdefense.TowerDefensePlayerManager;
-import net.punchtree.freebuild.towerdefense.TowerDefenseTestingCommand;
+import net.punchtree.freebuild.towerdefense.*;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -67,6 +64,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new JebSheepGiveFreeDye(), this);
         Bukkit.getPluginManager().registerEvents(ambientVoteCommand, this);
         Bukkit.getPluginManager().registerEvents(new TowerBuildingListener(towerDefensePlayerManager), this);
+        Bukkit.getPluginManager().registerEvents(new TowerDefenseQuitListener(towerDefensePlayerManager), this);
     }
 
     private void registerCustomWorldguardFlags() {

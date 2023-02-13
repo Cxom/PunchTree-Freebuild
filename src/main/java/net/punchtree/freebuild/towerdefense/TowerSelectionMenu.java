@@ -4,13 +4,11 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 
 public class TowerSelectionMenu implements Listener {
 
@@ -39,13 +37,13 @@ public class TowerSelectionMenu implements Listener {
             TowerDefensePlayer tdPlayer = towerDefensePlayerManager.getPlayer(player);
 
             if (event.getCurrentItem().getType() == TowerType.BASIC.iconMaterial) {
-                tdPlayer.placeTower(TowerType.BASIC);
+                tdPlayer.attemptPlaceTower(TowerType.BASIC);
             }
+            player.closeInventory();
         }
     }
 
     public void showTo(TowerDefensePlayer tdPlayer) {
-        tdPlayer.getPlayer().sendMessage("Opening tower placement menu!");
         tdPlayer.getPlayer().openInventory(inventory);
     }
 }
