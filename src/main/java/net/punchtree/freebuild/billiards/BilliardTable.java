@@ -299,7 +299,7 @@ public class BilliardTable {
     }
 
     private void findPlacement(Map<Integer, BallStyle> placementMap, Queue<BallStyle> solid, Queue<BallStyle> striped) {
-        Queue<Integer> remainingPositions = new ArrayDeque();
+        Queue<Integer> remainingPositions = new ArrayDeque<>();
         for (int i = 0; i <= 14; ++i) {
             if (!placementMap.containsKey(i)) {
                 remainingPositions.add(i);
