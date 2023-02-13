@@ -2,14 +2,16 @@ package net.punchtree.freebuild.towerdefense;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
 
 public enum TowerType {
-    BASIC(Material.MOSSY_COBBLESTONE_WALL, Component.text("Basic Tower"));
+
+    DIRECT_DAMAGE(Material.MOSSY_COBBLESTONE_WALL, Component.text("Direct Damage")),
+    DOT_DAMAGE(Material.SCULK, Component.text("Dot Damage")),
+    AOE_DAMAGE(Material.TNT, Component.text("AOE Damage"));
 
     public final Material iconMaterial;
     private TextComponent name;
@@ -32,9 +34,9 @@ public enum TowerType {
         return icon;
     }
 
-    public Block[] getFootprint(Location selectedTowerBuildLocation) {
+    public Block[] getFootprint(Block selectedTowerBuildLocation) {
         // For now, all tower types are 3x3
-        Block centerBlock = selectedTowerBuildLocation.getBlock();
+        Block centerBlock = selectedTowerBuildLocation;
         Block northCenterBlock = centerBlock.getRelative(BlockFace.NORTH);
         Block southCenterBlock = centerBlock.getRelative(BlockFace.SOUTH);
         return new Block[] {

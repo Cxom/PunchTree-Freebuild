@@ -9,14 +9,14 @@ public class TowerDefensePlayer {
 
     private final Player player;
     private final TowerDefenseGame game;
-    private Location selectedTowerBuildLocation;
+    private Block selectedTowerBuildLocation;
 
     public TowerDefensePlayer(Player player, TowerDefenseGame game) {
         this.player = player;
         this.game = game;
     }
 
-    public void setSelectedTowerBuildLocation(Location location) {
+    public void setSelectedTowerBuildLocation(Block location) {
         this.selectedTowerBuildLocation = location;
     }
 

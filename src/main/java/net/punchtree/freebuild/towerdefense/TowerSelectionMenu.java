@@ -20,7 +20,9 @@ public class TowerSelectionMenu implements Listener {
     public TowerSelectionMenu(TowerDefensePlayerManager towerDefensePlayerManager) {
         this.towerDefensePlayerManager = towerDefensePlayerManager;
         this.inventory = Bukkit.createInventory(null, 9, MENU_TITLE);
-        inventory.addItem(TowerType.BASIC.getIcon());
+        for(TowerType towerType : TowerType.values()) {
+            inventory.addItem(towerType.getIcon());
+        }
         Bukkit.getPluginManager().registerEvents(this, PunchTreeFreebuildPlugin.getInstance());
     }
 
@@ -36,8 +38,12 @@ public class TowerSelectionMenu implements Listener {
             // taking for granted that the player is a TowerDefensePlayer
             TowerDefensePlayer tdPlayer = towerDefensePlayerManager.getPlayer(player);
 
-            if (event.getCurrentItem().getType() == TowerType.BASIC.iconMaterial) {
-                tdPlayer.attemptPlaceTower(TowerType.BASIC);
+            if (event.getCurrentItem().getType() == TowerType.DIRECT_DAMAGE.iconMaterial) {
+                tdPlayer.attemptPlaceTower(TowerType.DIRECT_DAMAGE);
+            } else if (event.getCurrentItem().getType() == TowerType.DOT_DAMAGE.iconMaterial) {
+                tdPlayer.attemptPlaceTower(TowerType.DOT_DAMAGE);
+            } else if (event.getCurrentItem().getType() == TowerType.AOE_DAMAGE.iconMaterial) {
+                tdPlayer.attemptPlaceTower(TowerType.AOE_DAMAGE);
             }
             player.closeInventory();
         }
