@@ -2,6 +2,9 @@ package net.punchtree.freebuild.towerdefense;
 
 import net.kyori.adventure.text.Component;
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
+import net.punchtree.freebuild.towerdefense.tower.AoeDamageTower;
+import net.punchtree.freebuild.towerdefense.tower.DirectDamageTower;
+import net.punchtree.freebuild.towerdefense.tower.Tower;
 import net.punchtree.util.debugvar.DebugVars;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Block;
@@ -44,7 +47,7 @@ public class TowerDefenseGame {
     }
 
     public void spawnMob() {
-        minions.add(new Minion(this, path, DebugVars.getDecimalAsDouble("td_minion_speed", 0.5), 10));
+        minions.add(new Minion(this, path, DebugVars.getDecimalAsDouble("td_minion_speed", 0.1), 10));
     }
 
     public void attemptPlaceTower(TowerDefensePlayer tdPlayer, TowerType type, Block selectedTowerBuildLocation) {
@@ -64,8 +67,13 @@ public class TowerDefenseGame {
             block.getRelative(BlockFace.UP).setType(type.getIcon().getType());
         }
 
-        Tower tower = new Tower(this, selectedTowerBuildLocation, type);
-        towers.add(tower);
+        if (type == TowerType.DIRECT_DAMAGE) {
+            DirectDamageTower tower = new DirectDamageTower(this, selectedTowerBuildLocation, type);
+            towers.add(tower);
+        } else if (type == TowerType.AOE_DAMAGE) {
+            AoeDamageTower tower = new AoeDamageTower(this, selectedTowerBuildLocation, type);
+            towers.add(tower);
+        }
     }
 
     private boolean isPlaceable(TowerType basic, Block selectedTowerBuildLocation) {
@@ -92,5 +100,12 @@ public class TowerDefenseGame {
 
     public void removeMinion(Minion minion) {
         minions.remove(minion);
+    }
+
+    // TODO optimize!!!!!
+    public List<Minion> getMinionsWithinRange(Range range) {
+        return minions.stream()
+                .filter(minion -> range.contains(minion.getLocation()))
+                .toList();
     }
 }

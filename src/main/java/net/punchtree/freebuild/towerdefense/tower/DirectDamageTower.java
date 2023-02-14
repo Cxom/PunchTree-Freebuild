@@ -1,6 +1,9 @@
-package net.punchtree.freebuild.towerdefense;
+package net.punchtree.freebuild.towerdefense.tower;
 
 import com.destroystokyo.paper.ParticleBuilder;
+import net.punchtree.freebuild.towerdefense.Range;
+import net.punchtree.freebuild.towerdefense.TowerDefenseGame;
+import net.punchtree.freebuild.towerdefense.TowerType;
 import net.punchtree.util.particle.ParticleShapes;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -8,22 +11,23 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 
-public class Tower {
+public class DirectDamageTower implements Tower {
 
     private TowerDefenseGame game;
     private TowerType type;
     private final Range range;
     private final int ticksBetweenShots = 5;
 
-    public Tower(TowerDefenseGame game, Block selectedTowerBuildBlock, TowerType type) {
+    public DirectDamageTower(TowerDefenseGame game, Block selectedTowerBuildBlock, TowerType type) {
         this.game = game;
         this.type = type;
 
         Location center = selectedTowerBuildBlock.getLocation().add(0.5, 0, 0.5);
-        this.range = new Range(center, 4);
+        this.range = new Range(center, 4.5);
     }
 
     int tickCounter = 0;
+    @Override
     public void tick() {
         // direct damage to enemies
         // get the furthest along enemy THAT IS WITHIN the range of this tower
