@@ -1,6 +1,6 @@
 name: PunchTree-Freebuild
 main: net.punchtree.freebuild.PunchTreeFreebuildPlugin
-version: 0.1.4
+version: 0.1.5
 api-version: 1.19
 depend: [WorldGuard, PunchTree-Util]
 description: Custom functionality for the PunchTree freebuild server.
