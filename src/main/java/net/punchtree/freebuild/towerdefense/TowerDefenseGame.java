@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
 import net.punchtree.freebuild.towerdefense.tower.AoeDamageTower;
 import net.punchtree.freebuild.towerdefense.tower.DirectDamageTower;
+import net.punchtree.freebuild.towerdefense.tower.DotDamageTower;
 import net.punchtree.freebuild.towerdefense.tower.Tower;
 import net.punchtree.util.debugvar.DebugVars;
 import org.bukkit.ChatColor;
@@ -72,6 +73,9 @@ public class TowerDefenseGame {
             towers.add(tower);
         } else if (type == TowerType.AOE_DAMAGE) {
             AoeDamageTower tower = new AoeDamageTower(this, selectedTowerBuildLocation, type);
+            towers.add(tower);
+        } else if (type == TowerType.DOT_DAMAGE) {
+            DotDamageTower tower = new DotDamageTower(this, selectedTowerBuildLocation, type);
             towers.add(tower);
         }
     }

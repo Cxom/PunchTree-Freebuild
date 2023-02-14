@@ -3,6 +3,7 @@ package net.punchtree.freebuild.towerdefense;
 import com.destroystokyo.paper.ParticleBuilder;
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
 import net.punchtree.util.color.PunchTreeColor;
+import net.punchtree.util.debugvar.DebugVars;
 import net.punchtree.util.particle.ParticleShapes;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -24,6 +25,8 @@ public class Minion {
     // TODO actually position minions at the offsets, do damage according to range, etc
     private final double offsetX, offsetZ;
 
+    private long poisonedUntil = 0;
+
     public Minion(TowerDefenseGame game, Path path, double speed, double maxHealth) {
         this.game = game;
         this.path = path;
@@ -41,6 +44,16 @@ public class Minion {
         ParticleShapes.spawnParticle(getLocation());
 
         pathPosition.advance(speed);
+
+        if (isPoisoned()) {
+            damage(DebugVars.getDecimalAsDouble("td:poison_damage", 0.02));
+            ParticleShapes.setParticleBuilder(new ParticleBuilder(Particle.REDSTONE).color(0, 255, 200));
+            ParticleShapes.spawnParticleLine(getLocation().clone().add(0, 0.5, 0), getLocation().clone().add(0, 1.5, 0), 5);
+        }
+    }
+
+    private boolean isPoisoned() {
+        return System.currentTimeMillis() < poisonedUntil;
     }
 
     public Location getLocation() {
@@ -71,4 +84,9 @@ public class Minion {
             }
         }.runTaskTimer(PunchTreeFreebuildPlugin.getInstance(), 0, 5);
     }
+
+    public void poison(int durationTicks) {
+        poisonedUntil = System.currentTimeMillis() + durationTicks * 50L;
+    }
+
 }
