@@ -4,6 +4,7 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.IntegerFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
 import net.punchtree.freebuild.billiards.BilliardsCommand;
 import net.punchtree.freebuild.billiards.BilliardsManager;
 import net.punchtree.freebuild.billiards.BilliardsShootListener;
@@ -25,6 +26,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     }
     private BlocksCommand blocksCommand;
     private AmbientVoteCommand ambientVoteCommand;
+    private NightTimeRunnable nightTimeRunnable;
     private BilliardsManager billiardsManager;
 
     private IntegerFlag NUMBER_OF_CLAIMS_FLAG;
@@ -43,6 +45,9 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         blocksCommand = new BlocksCommand();
         ambientVoteCommand = new AmbientVoteCommand();
         towerDefenseMapManager = new TowerDefenseMapManager();
+
+        nightTimeRunnable = new NightTimeRunnable(Bukkit.getWorld("world"));
+        nightTimeRunnable.scheduleRepeatingTaskForTime(13000L);
 
         setCommandExecutors();
 
@@ -82,6 +87,20 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     public void onDisable() {
         billiardsManager.onDisable();
         ambientVoteCommand.cancelAmbientVoteTasks();
+        nightTimeRunnable.cancel();
+        nightTimeRunnable = null;
         towerDefenseMapManager.onDisable();
+    }
+
+    public void setNightTimeRunnable(NightTimeRunnable nightTimeRunnable, long startTime) {
+        if(this.nightTimeRunnable != null && !this.nightTimeRunnable.isCancelled()){
+            this.nightTimeRunnable.cancel();
+        }
+        this.nightTimeRunnable = nightTimeRunnable;
+        this.nightTimeRunnable.scheduleRepeatingTaskForTime(startTime);
+    }
+
+    public NightTimeRunnable getNightTimeRunnable() {
+        return nightTimeRunnable;
     }
 }
