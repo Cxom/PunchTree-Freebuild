@@ -114,8 +114,6 @@ public class Vote extends BukkitRunnable {
     }
 
     public void removeVote(Player voter) {
-        if(this.isCancelled()) return;
-
         activeVoters.remove(voter.getUniqueId());
     }
 }
