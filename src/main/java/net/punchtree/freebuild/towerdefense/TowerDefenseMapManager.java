@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class TowerDefenseMapManager {
 
-    private final Map<String, TowerDefenseMap> maps = new HashMap<>();
+    private final Map<String, TowerDefenseGame> maps = new HashMap<>();
 
     public TowerDefenseMapManager() {
         World world = Bukkit.getWorld("world");
@@ -18,14 +18,14 @@ public class TowerDefenseMapManager {
         Location pathPoint3 = new Location(world, -72.5, 17.00, -1686.5);
         Location pathPoint4 = new Location(world, -59.5, 17.00, -1686.5);
         Path path = new Path(new Location[]{pathPoint1, pathPoint2, pathPoint3, pathPoint4});
-        maps.put("test", new TowerDefenseMap(path));
+        maps.put("test", new TowerDefenseGame("test", path));
     }
 
-    public TowerDefenseMap getMap(String mapName) {
+    public TowerDefenseGame getMap(String mapName) {
         return maps.get(mapName);
     }
 
     public void onDisable() {
-        maps.values().forEach(TowerDefenseMap::onDisable);
+        maps.values().forEach(TowerDefenseGame::onDisable);
     }
 }
