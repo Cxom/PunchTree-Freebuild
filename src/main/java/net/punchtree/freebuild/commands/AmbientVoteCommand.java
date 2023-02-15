@@ -4,7 +4,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
+import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
 import net.punchtree.freebuild.ambientvoting.Vote;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,24 +14,27 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
 public class AmbientVoteCommand implements CommandExecutor, Listener {
     private static final Component skipWeatherText;
-    private static final Component weatherBossbarTitle;
+    private static final Component weatherProgressBarTitle;
     private static final Component skipWeatherFailedText;
     private static final Component skipWeatherSuccessText;
     private static final Component notStormingMessage;
+    private static final Component notNightMessage;
     private Vote activeWeatherVote = null;
     private BukkitTask activeWeatherTask = null;
 
     private final PunchTreeFreebuildPlugin ptfbInstance = PunchTreeFreebuildPlugin.getInstance();
 
     static {
-        weatherBossbarTitle = Component
+        weatherProgressBarTitle = Component
                 .text("Type ", NamedTextColor.AQUA)
                 .append(Component.text("/vskip weather ", NamedTextColor.GOLD))
                 .append(Component.text("to vote skip the storm.", NamedTextColor.AQUA));
@@ -37,14 +42,12 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
         skipWeatherFailedText = Component
                 .text("The vote to skip the weather has ", NamedTextColor.AQUA)
                 .append(Component.text("failed", NamedTextColor.RED))
-                .append(Component.text("!\n", NamedTextColor.AQUA))
-                .append(Component.text("The storm will continue.", NamedTextColor.AQUA));
+                .append(Component.text("!", NamedTextColor.AQUA));
 
         skipWeatherSuccessText = Component
                 .text("The vote to skip the weather has ", NamedTextColor.AQUA)
                 .append(Component.text("succeeded", NamedTextColor.GREEN))
-                .append(Component.text("!\n", NamedTextColor.AQUA))
-                .append(Component.text("The storm will pass.", NamedTextColor.AQUA));
+                .append(Component.text("!", NamedTextColor.AQUA));
 
         skipWeatherText = Component
                 .text("Looks like the weather has taken a turn for the worse!\n", NamedTextColor.AQUA)
@@ -55,12 +58,17 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
 
         notStormingMessage = Component
                 .text("Its not storming right now!", NamedTextColor.RED);
+
+        notNightMessage = Component
+                .text("Its not night time right now!", NamedTextColor.RED);
     }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if(!(sender instanceof Player player)) return true;
-        World worldToSkip = player.getWorld();
+        World worldToSkip = Bukkit.getWorld("world");
+        //TODO: Add support for skipping other worlds and get rid of this assertion
+        assert worldToSkip != null;
 
         switch (label) {
             case "skipweather" -> {
@@ -68,6 +76,7 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
                 return true;
             }
             case "skipnight" -> {
+                attemptNightSkipVote(player, worldToSkip);
                 return true;
             }
             default -> {
@@ -79,6 +88,7 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
                         return true;
                     }
                     case "night", "time" -> {
+                        attemptNightSkipVote(player, worldToSkip);
                         return true;
                     }
                     default -> {
@@ -96,6 +106,13 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
         }
         activeWeatherVote.castVote(player);
     }
+    private void attemptNightSkipVote(Player player, World worldForSkip) {
+        if(worldForSkip.getTime() < 13000L){
+            player.sendMessage(notNightMessage);
+            return;
+        }
+        ptfbInstance.getNightTimeRunnable().getCurrentNightVote().castVote(player);
+    }
 
     @EventHandler
     public void onWeatherChange(WeatherChangeEvent event) {
@@ -107,21 +124,39 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
                 skipWeatherText,
                 skipWeatherSuccessText,
                 skipWeatherFailedText,
-                weatherBossbarTitle,
+                weatherProgressBarTitle,
                 0.6f,
                 voteResult -> {
                     if(voteResult) {
                         currentWorld.setStorm(false);
                     }
+                    activeWeatherTask.cancel();
                     activeWeatherTask = null;
                 },
-                currentWorld::hasStorm);
+                () -> !currentWorld.hasStorm());
         activeWeatherTask = activeWeatherVote.runTaskTimer(ptfbInstance, 20L, 20L);
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        activeWeatherVote.removeVote(event.getPlayer());
+        if(activeWeatherVote != null){
+            activeWeatherVote.removeVote(event.getPlayer());
+        }
+        ptfbInstance.getNightTimeRunnable().getCurrentNightVote().removeVote(event.getPlayer());
+    }
+
+    @EventHandler()
+    public void onCommandPreProcessEvent(PlayerCommandPreprocessEvent event) {
+        String commandMessage = event.getMessage().toLowerCase();
+        if(commandMessage.startsWith("/time ") || commandMessage.startsWith("/etime ")) {
+        new BukkitRunnable() {
+
+            @Override
+            public void run() {
+                ptfbInstance.setNightTimeRunnable(new NightTimeRunnable(Bukkit.getWorld("world")), 13000L);
+            }
+        }.runTaskLater(ptfbInstance, 20);
+        }
     }
 
     public void cancelAmbientVoteTasks() {
