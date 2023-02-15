@@ -21,6 +21,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.logging.Level;
+
 public class AmbientVoteCommand implements CommandExecutor, Listener {
     private static final Component skipWeatherText;
     private static final Component weatherProgressBarTitle;
@@ -29,7 +31,6 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
     private static final Component notStormingMessage;
     private static final Component notNightMessage;
     private Vote activeWeatherVote = null;
-    private BukkitTask activeWeatherTask = null;
 
     private final PunchTreeFreebuildPlugin ptfbInstance = PunchTreeFreebuildPlugin.getInstance();
 
@@ -130,11 +131,9 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
                     if(voteResult) {
                         currentWorld.setStorm(false);
                     }
-                    activeWeatherTask.cancel();
-                    activeWeatherTask = null;
                 },
                 () -> !currentWorld.hasStorm());
-        activeWeatherTask = activeWeatherVote.runTaskTimer(ptfbInstance, 20L, 20L);
+        activeWeatherVote.runTaskTimer(ptfbInstance, 20L, 20L);
     }
 
     @EventHandler
@@ -159,9 +158,11 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
         }
     }
 
-    public void cancelAmbientVoteTasks() {
-        if(activeWeatherTask != null && !activeWeatherTask.isCancelled()) {
-            activeWeatherTask.cancel();
+    public void cancelWeatherVote() {
+        try {
+            activeWeatherVote.cancel();
+        } catch (IllegalStateException ignored) {
+            ptfbInstance.getLogger().log(Level.WARNING, "Weather vote task was already cancelled");
         }
     }
 }

@@ -91,7 +91,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         billiardsManager.onDisable();
-        ambientVoteCommand.cancelAmbientVoteTasks();
+        ambientVoteCommand.cancelWeatherVote();
         nightTimeRunnable.cancel();
         nightTimeRunnable = null;
         towerDefenseMapManager.onDisable();
