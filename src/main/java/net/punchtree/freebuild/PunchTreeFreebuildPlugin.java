@@ -46,8 +46,6 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         billiardsManager = new BilliardsManager();
         blocksCommand = new BlocksCommand();
         ambientVoteCommand = new AmbientVoteCommand();
-        towerDefenseMapManager = new TowerDefenseMapManager();
-        towerDefensePlayerManager = new TowerDefensePlayerManager();
 
         nightTimeRunnable = new NightTimeRunnable(Bukkit.getWorld("world"));
         nightTimeRunnable.scheduleRepeatingTaskForTime(13000L);
@@ -55,6 +53,8 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         setCommandExecutors();
 
         registerEvents();
+
+        initializeTowerDefense();
     }
 
     private void setCommandExecutors() {
@@ -62,7 +62,6 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         getCommand("vskip").setExecutor(ambientVoteCommand);
         getCommand("claimtest").setExecutor(new ClaimTestingCommand());
         getCommand("billiards").setExecutor(new BilliardsCommand(billiardsManager));
-        getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
     }
 
     private void registerEvents() {
@@ -70,11 +69,17 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new BilliardsShootListener(billiardsManager), this);
         Bukkit.getPluginManager().registerEvents(new JebSheepGiveFreeDye(), this);
         Bukkit.getPluginManager().registerEvents(ambientVoteCommand, this);
+        Bukkit.getPluginManager().registerEvents(new ParkourListener(), this);
+        Bukkit.getPluginManager().registerEvents(new OnCobblestoneFormEvent(), this);
+    }
+
+    private void initializeTowerDefense() {
+        towerDefenseMapManager = new TowerDefenseMapManager();
+        towerDefensePlayerManager = new TowerDefensePlayerManager();
+        getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
         Bukkit.getPluginManager().registerEvents(new TowerBuildingListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new TowerDefenseQuitListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new TowerDefenseHotbarUiListener(towerDefensePlayerManager), this);
-        Bukkit.getPluginManager().registerEvents(new ParkourListener(), this);
-        Bukkit.getPluginManager().registerEvents(new OnCobblestoneFormEvent(), this);
     }
 
     private void registerCustomWorldguardFlags() {
