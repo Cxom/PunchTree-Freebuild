@@ -13,6 +13,7 @@ import net.punchtree.freebuild.commands.AmbientVoteCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
 import net.punchtree.freebuild.parkour.ParkourListener;
 import net.punchtree.freebuild.towerdefense.*;
+import net.punchtree.freebuild.towerdefense.tower.TowerDefenseHotbarUiListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -71,6 +72,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(ambientVoteCommand, this);
         Bukkit.getPluginManager().registerEvents(new TowerBuildingListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new TowerDefenseQuitListener(towerDefensePlayerManager), this);
+        Bukkit.getPluginManager().registerEvents(new TowerDefenseHotbarUiListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new ParkourListener(), this);
         Bukkit.getPluginManager().registerEvents(new OnCobblestoneFormEvent(), this);
     }
