@@ -18,7 +18,6 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.logging.Level;
@@ -159,6 +158,7 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
     }
 
     public void cancelWeatherVote() {
+        if(activeWeatherVote == null) return;
         try {
             activeWeatherVote.cancel();
         } catch (IllegalStateException ignored) {
