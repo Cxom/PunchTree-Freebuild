@@ -171,6 +171,7 @@ public class BlocksCommand implements CommandExecutor, Listener {
                 Material.BUBBLE_CORAL_FAN,
                 Material.FIRE_CORAL_FAN,
                 Material.HORN_CORAL_FAN,
+                Material.LILY_PAD,
                 Material.WHITE_DYE,
                 Material.LIGHT_GRAY_DYE,
                 Material.GRAY_DYE,
@@ -236,11 +237,6 @@ public class BlocksCommand implements CommandExecutor, Listener {
                 Material.BAMBOO,
                 Material.SWEET_BERRIES,
                 Material.GLOW_BERRIES,
-                Material.TUBE_CORAL_FAN,
-                Material.BRAIN_CORAL_FAN,
-                Material.BUBBLE_CORAL_FAN,
-                Material.FIRE_CORAL_FAN,
-                Material.HORN_CORAL_FAN,
                 Material.HANGING_ROOTS,
                 Material.GRASS,
                 Material.FERN
@@ -334,7 +330,7 @@ public class BlocksCommand implements CommandExecutor, Listener {
         int clickableItemIndex = CLICKABLE_ITEMS.indexOf(invToScroll.getItem(0));
 
         if (clickableItemIndex == 0 && amountToScroll <= 0) return;
-        if (clickableItemIndex + BLOCKS_PER_PAGE >= CLICKABLE_ITEMS.size() - 1 && amountToScroll >= 0) return;
+        if (clickableItemIndex + BLOCKS_PER_PAGE >= CLICKABLE_ITEMS.size() && amountToScroll >= 0) return;
 
         invToScroll.setContents(TEMPLATED_INVENTORY.getContents());
 
