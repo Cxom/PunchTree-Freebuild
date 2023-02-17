@@ -6,7 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFormEvent;
 
-public class OnCobblestoneFormEvent implements Listener {
+public class OnCobblestoneForm implements Listener {
 
     int cobblestoneFormed = 0;
     long lastLogged = System.currentTimeMillis();
