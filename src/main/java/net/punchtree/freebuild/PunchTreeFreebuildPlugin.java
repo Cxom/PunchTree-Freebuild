@@ -73,8 +73,9 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new TowerBuildingListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new TowerDefenseQuitListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new ParkourListener(), this);
-        Bukkit.getPluginManager().registerEvents(new OnCobblestoneFormEvent(), this);
+        Bukkit.getPluginManager().registerEvents(new OnCobblestoneForm(), this);
         Bukkit.getPluginManager().registerEvents(new HeartSignListener(), this);
+        Bukkit.getPluginManager().registerEvents(new OnPlayerDamageEntity(), this);
     }
 
     private void registerCustomWorldguardFlags() {
