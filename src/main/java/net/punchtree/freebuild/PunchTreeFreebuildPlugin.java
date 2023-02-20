@@ -13,6 +13,8 @@ import net.punchtree.freebuild.commands.AmbientVoteCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
 import net.punchtree.freebuild.heartsigns.HeartSignListener;
 import net.punchtree.freebuild.parkour.ParkourListener;
+import net.punchtree.freebuild.playingcards.PlayingCardCommands;
+import net.punchtree.freebuild.playingcards.PlayingCardInteractListener;
 import net.punchtree.freebuild.towerdefense.*;
 import net.punchtree.freebuild.towerdefense.tower.TowerDefenseHotbarUiListener;
 import org.bukkit.Bukkit;
@@ -63,6 +65,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         getCommand("vskip").setExecutor(ambientVoteCommand);
         getCommand("claimtest").setExecutor(new ClaimTestingCommand());
         getCommand("billiards").setExecutor(new BilliardsCommand(billiardsManager));
+        getCommand("playingcards").setExecutor(new PlayingCardCommands());
     }
 
     private void registerEvents() {
@@ -74,6 +77,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new OnCobblestoneForm(), this);
         Bukkit.getPluginManager().registerEvents(new HeartSignListener(), this);
         Bukkit.getPluginManager().registerEvents(new OnPlayerDamageEntity(), this);
+        Bukkit.getPluginManager().registerEvents(new PlayingCardInteractListener(), this);
     }
 
     private void initializeTowerDefense() {
