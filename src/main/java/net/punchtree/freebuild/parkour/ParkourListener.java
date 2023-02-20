@@ -29,7 +29,7 @@ public class ParkourListener implements Listener {
     static {
         PARKOUR_ITEM.editMeta(meta -> {
             meta.displayName(Component.text("Parkour Item").color(NamedTextColor.GOLD));
-            meta.lore(Arrays.asList(Component.text("Left click to teleport to the start"), Component.text("Shift left click to teleport to the respawn point"), Component.text("Shift right click to set a new respawn point")));
+            meta.lore(Arrays.asList(Component.text("Left click to teleport to the start"), Component.text("Right click to teleport to the respawn point"), Component.text("Shift right click to set a new respawn point")));
             meta.setCustomModelData(300);
         });
     }
