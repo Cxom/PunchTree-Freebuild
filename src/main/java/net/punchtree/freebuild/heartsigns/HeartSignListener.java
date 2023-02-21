@@ -3,7 +3,6 @@ package net.punchtree.freebuild.heartsigns;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.Bukkit;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,15 +18,11 @@ public class HeartSignListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onSignChange(SignChangeEvent event) {
-        Bukkit.getLogger().info("SignChangeEvent");
         if(event.line(0) == null || !event.getPlayer().hasPermission("ptfb.heartsigns.create")) return;
-        Bukkit.getLogger().info("Line wasn't null and player has permission");
         Sign sign = (Sign) event.getBlock().getState();
         String line0AsString = PlainTextComponentSerializer.plainText().serialize(Objects.requireNonNull(event.line(0)));
         String triggerString = "[heart]";
-        Bukkit.getLogger().info(line0AsString + " " + triggerString);
         if(line0AsString.equalsIgnoreCase(triggerString)) {
-            Bukkit.getLogger().info("Line 0 was equal to trigger string");
             event.setCancelled(true);
             new HeartSign(sign, event.getPlayer().getUniqueId());
         }
