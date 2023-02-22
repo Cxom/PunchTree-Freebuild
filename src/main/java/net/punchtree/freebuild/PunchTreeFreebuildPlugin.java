@@ -11,7 +11,7 @@ import net.punchtree.freebuild.billiards.BilliardsCommand;
 import net.punchtree.freebuild.billiards.BilliardsManager;
 import net.punchtree.freebuild.billiards.BilliardsShootListener;
 import net.punchtree.freebuild.claiming.commands.ClaimTestingCommand;
-import net.punchtree.freebuild.commands.AmbientVoteCommand;
+import net.punchtree.freebuild.ambientvoting.AmbientVoteCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
 import net.punchtree.freebuild.heartsigns.HeartSignListener;
 import net.punchtree.freebuild.parkour.ParkourListener;

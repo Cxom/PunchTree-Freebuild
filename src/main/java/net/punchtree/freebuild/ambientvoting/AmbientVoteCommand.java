@@ -1,4 +1,4 @@
-package net.punchtree.freebuild.commands;
+package net.punchtree.freebuild.ambientvoting;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
