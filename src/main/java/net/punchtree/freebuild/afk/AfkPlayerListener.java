@@ -32,7 +32,7 @@ public class AfkPlayerListener implements Listener {
                 }
                 if (System.currentTimeMillis() - lastActivity.get(uuid) > 1000 * 60 * 5) {
                     RosterManager.getRoster("afk").addPlayer(uuid);
-                    lastActivity.remove(uuid);
+                    clearActivity(afkPlayer);
                 }
             }
         }, 0, 20 * 10);
@@ -54,7 +54,7 @@ public class AfkPlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerDisconnect(PlayerQuitEvent event) {
-        lastActivity.remove(event.getPlayer().getUniqueId());
+        clearActivity(event.getPlayer());
         removePlayerFromRoster(event.getPlayer());
     }
 
@@ -83,8 +83,12 @@ public class AfkPlayerListener implements Listener {
         removePlayerFromRoster(event.getPlayer());
     }
 
-    private void updateLastActivity(Player player) {
+    public static void updateLastActivity(Player player) {
         lastActivity.put(player.getUniqueId(), System.currentTimeMillis());
+    }
+
+    public static void clearActivity(Player player) {
+        lastActivity.remove(player.getUniqueId());
     }
 
     private void removePlayerFromRoster(Player player) {

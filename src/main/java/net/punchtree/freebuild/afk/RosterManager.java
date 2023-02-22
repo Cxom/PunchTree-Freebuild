@@ -38,6 +38,7 @@ public class RosterManager {
                     player.setSleepingIgnored(true);
                     Bukkit.getServer().sendMessage(Component.text(playerDisplayName + " is now AFK.", NamedTextColor.DARK_GRAY));
                     afkTeam.addPlayer(player);
+                    AfkPlayerListener.clearActivity(player);
                 },
                 UUID -> {
                     Player player = Bukkit.getPlayer(UUID);
@@ -57,6 +58,7 @@ public class RosterManager {
                         }
                     });
                     afkTeam.removePlayer(player);
+                    AfkPlayerListener.updateLastActivity(player);
                 }
         ));
     }
