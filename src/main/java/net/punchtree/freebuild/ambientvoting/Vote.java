@@ -4,6 +4,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.punchtree.freebuild.afk.RosterManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -86,7 +87,8 @@ public class Vote extends BukkitRunnable {
     }
 
     private int calculateRequiredVotes() {
-        return (int) (Math.max(Bukkit.getOnlinePlayers().size() * requiredVotePercentage, 1f));
+        int afkPlayers = RosterManager.getRoster("afk").getRoster().size();
+        return (int) (Math.max((Bukkit.getOnlinePlayers().size() - afkPlayers) * requiredVotePercentage, 1f));
     }
 
     private Component appendVoteCount() {
