@@ -116,6 +116,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         nightTimeRunnable = null;
         towerDefenseMapManager.onDisable();
         AfkCommand.cooldownPruningTask.cancel();
+        AfkPlayerListener.autoAfkTask.cancel();
     }
 
     public void setNightTimeRunnable(NightTimeRunnable nightTimeRunnable, long startTime) {
