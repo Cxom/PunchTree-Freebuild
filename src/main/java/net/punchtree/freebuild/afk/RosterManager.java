@@ -15,9 +15,15 @@ import java.util.Map;
 
 public class RosterManager {
     private static final Map<String, Roster> rosters = new HashMap<>();
-    private static final Team afkTeam = Bukkit.getScoreboardManager().getMainScoreboard().registerNewTeam("afk");
+    private static final Team afkTeam;
 
     static {
+        if(Bukkit.getScoreboardManager().getMainScoreboard().getTeam("afk") == null) {
+            afkTeam = Bukkit.getScoreboardManager().getMainScoreboard().registerNewTeam("afk");
+        } else {
+            afkTeam = Bukkit.getScoreboardManager().getMainScoreboard().getTeam("afk");
+        }
+        assert afkTeam != null;
         afkTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
         rosters.put("afk", new Roster(new ArrayList<>(),
                 UUID -> {
