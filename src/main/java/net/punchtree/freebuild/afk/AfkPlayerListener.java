@@ -42,44 +42,54 @@ public class AfkPlayerListener implements Listener {
     public void onPlayerMove(PlayerMoveEvent event) {
         //TODO: un-AFK players after they've moved a certain distance to stop them from abusing flight.
         if(event.getFrom().distanceSquared(event.getTo()) < 0.01) return;
-        lastActivity.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
-        RosterManager.getRoster("afk").removePlayer(event.getPlayer().getUniqueId());
+        updateLastActivity(event.getPlayer());
+        removePlayerFromRoster(event.getPlayer());
     }
 
     @EventHandler
     public void onPlayerChat(AsyncChatEvent event) {
-        lastActivity.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
-        RosterManager.getRoster("afk").removePlayer(event.getPlayer().getUniqueId());
+        updateLastActivity(event.getPlayer());
+        removePlayerFromRoster(event.getPlayer());
     }
 
     @EventHandler
     public void onPlayerDisconnect(PlayerQuitEvent event) {
         lastActivity.remove(event.getPlayer().getUniqueId());
-        RosterManager.getRoster("afk").removePlayer(event.getPlayer().getUniqueId());
+        removePlayerFromRoster(event.getPlayer());
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        lastActivity.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
-        RosterManager.getRoster("afk").removePlayer(event.getPlayer().getUniqueId());
+        updateLastActivity(event.getPlayer());
+        removePlayerFromRoster(event.getPlayer());
     }
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
-        lastActivity.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
-        RosterManager.getRoster("afk").removePlayer(event.getPlayer().getUniqueId());
+        updateLastActivity(event.getPlayer());
+        removePlayerFromRoster(event.getPlayer());
     }
 
     @EventHandler
     public void onPlayerSendCommand(PlayerCommandPreprocessEvent event) {
-        lastActivity.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
+        updateLastActivity(event.getPlayer());
         if(event.getMessage().startsWith("/afk")) return;
-        RosterManager.getRoster("afk").removePlayer(event.getPlayer().getUniqueId());
+        removePlayerFromRoster(event.getPlayer());
     }
 
     @EventHandler
     public void onPlayerTeleport(PlayerTeleportEvent event) {
-        lastActivity.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
-        RosterManager.getRoster("afk").removePlayer(event.getPlayer().getUniqueId());
+        updateLastActivity(event.getPlayer());
+        removePlayerFromRoster(event.getPlayer());
+    }
+
+    private void updateLastActivity(Player player) {
+        lastActivity.put(player.getUniqueId(), System.currentTimeMillis());
+    }
+
+    private void removePlayerFromRoster(Player player) {
+        Roster afkRoster = RosterManager.getRoster("afk");
+        if(!afkRoster.containsPlayer(player.getUniqueId())) return;
+        afkRoster.removePlayer(player.getUniqueId());
     }
 }
