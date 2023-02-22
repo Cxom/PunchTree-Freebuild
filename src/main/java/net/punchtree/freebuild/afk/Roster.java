@@ -15,6 +15,10 @@ public class Roster {
         this.onRemove = onRemove;
     }
 
+    public List<UUID> getRoster() {
+        return roster;
+    }
+
     public void addPlayer(UUID player) {
         boolean success = roster.add(player);
         if(success) {
