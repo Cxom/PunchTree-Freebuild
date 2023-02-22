@@ -29,6 +29,7 @@ public class RosterManager {
                     player.setCanPickupItems(false);
                     player.setAllowFlight(true);
                     player.setFlying(true);
+                    player.setSleepingIgnored(true);
                     Bukkit.getServer().sendMessage(Component.text(playerDisplayName + " is now AFK.", NamedTextColor.DARK_GRAY));
                     afkTeam.addPlayer(player);
                 },
@@ -39,6 +40,7 @@ public class RosterManager {
                     player.setInvulnerable(false);
                     player.setGravity(true);
                     player.setCanPickupItems(true);
+                    player.setSleepingIgnored(false);
                     if(player.getGameMode().equals(GameMode.SURVIVAL)) {
                         player.setAllowFlight(false);
                         player.setFlying(false);
