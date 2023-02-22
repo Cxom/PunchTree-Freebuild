@@ -9,8 +9,8 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Team;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class RosterManager {
@@ -25,7 +25,7 @@ public class RosterManager {
         }
         assert afkTeam != null;
         afkTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
-        rosters.put("afk", new Roster(new ArrayList<>(),
+        rosters.put("afk", new Roster(new HashSet<>(),
                 UUID -> {
                     Player player = Bukkit.getPlayer(UUID);
                     if(player == null) return;
