@@ -31,3 +31,7 @@ commands:
     usage: /towerdefense <subcommand>
     permission: ptfb.in-progress-testing
     aliases: [td]
+  afk:
+    description: Tell other player's you're going away from the keyboard.
+    usage: /afk <optional user>
+    permission: ptfb.commands.afk

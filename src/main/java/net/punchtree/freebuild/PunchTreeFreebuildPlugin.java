@@ -4,6 +4,8 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.IntegerFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import net.punchtree.freebuild.afk.AfkCommand;
+import net.punchtree.freebuild.afk.AfkPlayerListener;
 import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
 import net.punchtree.freebuild.billiards.BilliardsCommand;
 import net.punchtree.freebuild.billiards.BilliardsManager;
@@ -63,6 +65,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         getCommand("claimtest").setExecutor(new ClaimTestingCommand());
         getCommand("billiards").setExecutor(new BilliardsCommand(billiardsManager));
         getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
+        getCommand("afk").setExecutor(new AfkCommand());
     }
 
     private void registerEvents() {
@@ -76,6 +79,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new OnCobblestoneForm(), this);
         Bukkit.getPluginManager().registerEvents(new HeartSignListener(), this);
         Bukkit.getPluginManager().registerEvents(new OnPlayerDamageEntity(), this);
+        Bukkit.getPluginManager().registerEvents(new AfkPlayerListener(), this);
     }
 
     private void registerCustomWorldguardFlags() {
@@ -99,6 +103,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         nightTimeRunnable.cancel();
         nightTimeRunnable = null;
         towerDefenseMapManager.onDisable();
+        AfkCommand.cooldownPruningTask.cancel();
     }
 
     public void setNightTimeRunnable(NightTimeRunnable nightTimeRunnable, long startTime) {
