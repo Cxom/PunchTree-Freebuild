@@ -15,7 +15,10 @@ import net.punchtree.freebuild.commands.AmbientVoteCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
 import net.punchtree.freebuild.heartsigns.HeartSignListener;
 import net.punchtree.freebuild.parkour.ParkourListener;
+import net.punchtree.freebuild.playingcards.PlayingCardCommands;
+import net.punchtree.freebuild.playingcards.PlayingCardInteractListener;
 import net.punchtree.freebuild.towerdefense.*;
+import net.punchtree.freebuild.towerdefense.tower.TowerDefenseHotbarUiListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -48,8 +51,6 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         billiardsManager = new BilliardsManager();
         blocksCommand = new BlocksCommand();
         ambientVoteCommand = new AmbientVoteCommand();
-        towerDefenseMapManager = new TowerDefenseMapManager();
-        towerDefensePlayerManager = new TowerDefensePlayerManager();
 
         nightTimeRunnable = new NightTimeRunnable(Bukkit.getWorld("world"));
         nightTimeRunnable.scheduleRepeatingTaskForTime(13000L);
@@ -57,6 +58,8 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         setCommandExecutors();
 
         registerEvents();
+
+        initializeTowerDefense();
     }
 
     private void setCommandExecutors() {
@@ -66,6 +69,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         getCommand("billiards").setExecutor(new BilliardsCommand(billiardsManager));
         getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
         getCommand("afk").setExecutor(new AfkCommand());
+        getCommand("playingcards").setExecutor(new PlayingCardCommands());
     }
 
     private void registerEvents() {
@@ -73,12 +77,20 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new BilliardsShootListener(billiardsManager), this);
         Bukkit.getPluginManager().registerEvents(new JebSheepGiveFreeDye(), this);
         Bukkit.getPluginManager().registerEvents(ambientVoteCommand, this);
-        Bukkit.getPluginManager().registerEvents(new TowerBuildingListener(towerDefensePlayerManager), this);
-        Bukkit.getPluginManager().registerEvents(new TowerDefenseQuitListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new ParkourListener(), this);
         Bukkit.getPluginManager().registerEvents(new OnCobblestoneForm(), this);
         Bukkit.getPluginManager().registerEvents(new HeartSignListener(), this);
         Bukkit.getPluginManager().registerEvents(new OnPlayerDamageEntity(), this);
+        Bukkit.getPluginManager().registerEvents(new PlayingCardInteractListener(), this);
+    }
+
+    private void initializeTowerDefense() {
+        towerDefenseMapManager = new TowerDefenseMapManager();
+        towerDefensePlayerManager = new TowerDefensePlayerManager();
+        getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
+        Bukkit.getPluginManager().registerEvents(new TowerBuildingListener(towerDefensePlayerManager), this);
+        Bukkit.getPluginManager().registerEvents(new TowerDefenseQuitListener(towerDefensePlayerManager), this);
+        Bukkit.getPluginManager().registerEvents(new TowerDefenseHotbarUiListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new AfkPlayerListener(), this);
     }
 

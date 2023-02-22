@@ -1,6 +1,6 @@
 name: PunchTree-Freebuild
 main: net.punchtree.freebuild.PunchTreeFreebuildPlugin
-version: 0.1.6
+version: 0.1.7
 api-version: 1.19
 depend: [WorldGuard, PunchTree-Util]
 description: Custom functionality for the PunchTree freebuild server.
@@ -31,6 +31,11 @@ commands:
     usage: /towerdefense <subcommand>
     permission: ptfb.in-progress-testing
     aliases: [td]
+  playingcards:
+    description: A catchall command for playing cards stuff
+    usage: /playingcards <subcommand>
+    permission: ptfb.in-progress-testing
+    aliases: [pc]
   afk:
     description: Tell other player's you're going away from the keyboard.
     usage: /afk <optional user>
