@@ -40,9 +40,8 @@ public class AfkPlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
-        if(event.getFrom().getX() == event.getTo().getX() && event.getFrom().getZ() == event.getTo().getZ()) {
-            return;
-        }
+        //TODO: un-AFK players after they've moved a certain distance to stop them from abusing flight.
+        if(event.getFrom().distanceSquared(event.getTo()) < 0.01) return;
         lastActivity.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
         RosterManager.getRoster("afk").removePlayer(event.getPlayer().getUniqueId());
     }
