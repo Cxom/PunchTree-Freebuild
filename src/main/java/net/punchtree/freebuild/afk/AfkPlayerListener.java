@@ -73,6 +73,7 @@ public class AfkPlayerListener implements Listener {
     @EventHandler
     public void onPlayerSendCommand(PlayerCommandPreprocessEvent event) {
         lastActivity.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
+        if(event.getMessage().startsWith("/afk")) return;
         RosterManager.getRoster("afk").removePlayer(event.getPlayer().getUniqueId());
     }
 
