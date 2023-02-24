@@ -6,6 +6,7 @@ import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import net.punchtree.freebuild.afk.AfkCommand;
 import net.punchtree.freebuild.afk.AfkPlayerListener;
+import net.punchtree.freebuild.afk.RosterManager;
 import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
 import net.punchtree.freebuild.billiards.BilliardsCommand;
 import net.punchtree.freebuild.billiards.BilliardsManager;
@@ -117,6 +118,10 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         towerDefenseMapManager.onDisable();
         AfkCommand.cooldownPruningTask.cancel();
         AfkPlayerListener.autoAfkTask.cancel();
+        if(Bukkit.getScoreboardManager().getMainScoreboard().getTeam("afk") != null) {
+            Bukkit.getScoreboardManager().getMainScoreboard().getTeam("afk").unregister();
+        }
+        RosterManager.getRoster("afk").wipeRoster();
     }
 
     public void setNightTimeRunnable(NightTimeRunnable nightTimeRunnable, long startTime) {

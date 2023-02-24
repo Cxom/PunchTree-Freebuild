@@ -31,6 +31,11 @@ public class Roster {
         }
     }
 
+    public void wipeRoster() {
+        roster.forEach(onRemove);
+        roster.clear();
+    }
+
     public boolean containsPlayer(UUID player) {
         return roster.contains(player);
     }
