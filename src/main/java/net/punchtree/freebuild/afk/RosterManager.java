@@ -25,6 +25,7 @@ public class RosterManager {
         }
         assert afkTeam != null;
         afkTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+        afkTeam.prefix(Component.text("[AFK] ", NamedTextColor.DARK_GRAY));
         rosters.put("afk", new Roster(new HashSet<>(),
                 UUID -> {
                     Player player = Bukkit.getPlayer(UUID);
