@@ -10,6 +10,7 @@ import org.bukkit.event.player.*;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -21,21 +22,25 @@ public class AfkPlayerListener implements Listener {
 
     static {
         autoAfkTask = Bukkit.getScheduler().runTaskTimer(PunchTreeFreebuildPlugin.getInstance(), () -> {
-            for (UUID uuid : lastActivity.keySet()) {
+            Iterator<Map.Entry<UUID, Long>> iterator = lastActivity.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<UUID, Long> entry = iterator.next();
+                UUID uuid = entry.getKey();
                 Player afkPlayer = Bukkit.getPlayer(uuid);
                 if(afkPlayer == null || !afkPlayer.isOnline() || RosterManager.getRoster("afk").containsPlayer(uuid)) {
-                    lastActivity.remove(uuid);
+                    iterator.remove();
                     continue;
                 }
                 if(afkPlayer.hasPermission("ptfb.afk.auto.bypass") || !afkPlayer.hasPermission("ptfb.afk.auto")) {
                     continue;
                 }
-                if (System.currentTimeMillis() - lastActivity.get(uuid) > 1000 * 60 * 5) {
+                if (System.currentTimeMillis() - entry.getValue() > 1000 * 60 * 5) {
                     RosterManager.getRoster("afk").addPlayer(uuid);
                     clearActivity(afkPlayer);
                 }
             }
         }, 0, 20 * 10);
+
     }
 
     @EventHandler
