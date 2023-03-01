@@ -11,6 +11,7 @@ import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
 import net.punchtree.freebuild.billiards.BilliardsCommand;
 import net.punchtree.freebuild.billiards.BilliardsManager;
 import net.punchtree.freebuild.billiards.BilliardsShootListener;
+import net.punchtree.freebuild.bossfight.WitherFightManager;
 import net.punchtree.freebuild.claiming.commands.ClaimTestingCommand;
 import net.punchtree.freebuild.ambientvoting.AmbientVoteCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
@@ -28,6 +29,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     private static PunchTreeFreebuildPlugin instance;
     private TowerDefenseMapManager towerDefenseMapManager;
     private TowerDefensePlayerManager towerDefensePlayerManager;
+    private WitherFightManager witherFightManager;
 
     public static PunchTreeFreebuildPlugin getInstance() {
         return instance;
@@ -55,6 +57,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
         nightTimeRunnable = new NightTimeRunnable(Bukkit.getWorld("world"));
         nightTimeRunnable.scheduleRepeatingTaskForTime(13000L);
+        witherFightManager = new WitherFightManager();
 
         setCommandExecutors();
 
@@ -83,6 +86,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new HeartSignListener(), this);
         Bukkit.getPluginManager().registerEvents(new OnPlayerDamageEntity(), this);
         Bukkit.getPluginManager().registerEvents(new PlayingCardInteractListener(), this);
+        Bukkit.getPluginManager().registerEvents(witherFightManager, this);
     }
 
     private void initializeTowerDefense() {
@@ -122,6 +126,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
             Bukkit.getScoreboardManager().getMainScoreboard().getTeam("afk").unregister();
         }
         RosterManager.getRoster("afk").wipeRoster();
+//        witherFightManager.onDisable();
     }
 
     public void setNightTimeRunnable(NightTimeRunnable nightTimeRunnable, long startTime) {

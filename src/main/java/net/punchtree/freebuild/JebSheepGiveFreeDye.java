@@ -61,7 +61,10 @@ public class JebSheepGiveFreeDye implements Listener {
 
         event.setCancelled(true);
         ItemStack clickedItem = event.getCurrentItem();
-        if(clickedItem == null || clickedInventory == null) return;
+        if(clickedItem == null ||
+                clickedInventory == null ||
+                event.getClickedInventory() == event.getWhoClicked().getInventory() ||
+                !clickedItem.getType().name().endsWith("DYE")) return;
 
         ItemStack itemToGive = new ItemStack(clickedItem.getType(), 64);
         clicker.getInventory().addItem(itemToGive);
