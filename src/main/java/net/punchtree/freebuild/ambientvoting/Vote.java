@@ -2,6 +2,8 @@ package net.punchtree.freebuild.ambientvoting;
 
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.punchtree.freebuild.afk.RosterManager;
@@ -83,6 +85,7 @@ public class Vote extends BukkitRunnable {
     public synchronized BukkitTask runTaskTimer(@NotNull Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
         currentAudience.sendMessage(startMessage);
         currentAudience.showBossBar(progressBar);
+        currentAudience.playSound(Sound.sound(Key.key("minecraft:block.note_block.chime"), Sound.Source.MASTER, 1.0f, 1.5f));
         return super.runTaskTimer(plugin, delay, period);
     }
 
