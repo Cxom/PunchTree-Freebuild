@@ -90,6 +90,7 @@ public class BlocksCommand implements CommandExecutor, Listener {
                 Material.NETHER_BRICKS,
                 Material.RED_NETHER_BRICKS,
                 Material.BASALT,
+                Material.SMOOTH_BASALT,
                 Material.BLACKSTONE,
                 Material.END_STONE,
                 Material.PURPUR_BLOCK,
