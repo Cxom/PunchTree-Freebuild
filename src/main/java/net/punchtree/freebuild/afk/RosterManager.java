@@ -53,11 +53,13 @@ public class RosterManager {
                         player.setAllowFlight(false);
                         player.setFlying(false);
                     }
-                    Bukkit.getScheduler().runTask(PunchTreeFreebuildPlugin.getInstance(), () -> {
-                        if(player.isOnline()) {
-                            Bukkit.getServer().sendMessage(Component.text(playerDisplayName + " is no longer AFK.", NamedTextColor.DARK_GRAY));
-                        }
-                    });
+                    if(PunchTreeFreebuildPlugin.getInstance().isEnabled()){
+                        Bukkit.getScheduler().runTask(PunchTreeFreebuildPlugin.getInstance(), () -> {
+                            if(player.isOnline()) {
+                                Bukkit.getServer().sendMessage(Component.text(playerDisplayName + " is no longer AFK.", NamedTextColor.DARK_GRAY));
+                            }
+                        });
+                    }
                     afkTeam.removePlayer(player);
                     AfkPlayerListener.updateLastActivity(player);
                 }
