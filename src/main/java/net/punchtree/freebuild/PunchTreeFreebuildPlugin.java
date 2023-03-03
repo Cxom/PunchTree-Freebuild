@@ -4,6 +4,7 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.IntegerFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import net.punchtree.freebuild.commands.AdvancementsCommand;
 import net.punchtree.freebuild.afk.AfkCommand;
 import net.punchtree.freebuild.afk.AfkPlayerListener;
 import net.punchtree.freebuild.afk.RosterManager;
@@ -12,7 +13,6 @@ import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
 import net.punchtree.freebuild.billiards.BilliardsCommand;
 import net.punchtree.freebuild.billiards.BilliardsManager;
 import net.punchtree.freebuild.billiards.BilliardsShootListener;
-import net.punchtree.freebuild.bossfight.WitherFightManager;
 import net.punchtree.freebuild.claiming.commands.ClaimTestingCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
 import net.punchtree.freebuild.dimension.NetherPortalListener;
@@ -73,6 +73,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
         getCommand("afk").setExecutor(new AfkCommand());
         getCommand("playingcards").setExecutor(new PlayingCardCommands());
+        getCommand("advancements").setExecutor(new AdvancementsCommand());
     }
 
     private void registerEvents() {

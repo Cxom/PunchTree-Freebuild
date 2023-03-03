@@ -40,3 +40,7 @@ commands:
     description: Tell other player's you're going away from the keyboard.
     usage: /afk <optional user>
     permission: ptfb.commands.afk
+  advancements:
+    description: Check your remaining progress towards your advancements.
+    usage: /advancements <advancement_name>
+    permission: ptfb.commands.advancements
