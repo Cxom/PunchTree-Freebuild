@@ -73,6 +73,7 @@ public class BlocksCommand implements CommandExecutor, Listener {
                 Material.DIORITE,
                 Material.ANDESITE,
                 Material.COBBLED_DEEPSLATE,
+                Material.DEEPSLATE,
                 Material.BRICKS,
                 Material.PACKED_MUD,
                 Material.SANDSTONE,
