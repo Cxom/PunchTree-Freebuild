@@ -1,6 +1,6 @@
 name: PunchTree-Freebuild
 main: net.punchtree.freebuild.PunchTreeFreebuildPlugin
-version: 0.2.2
+version: 0.2.3
 api-version: 1.19
 depend: [WorldGuard, PunchTree-Util]
 description: Custom functionality for the PunchTree freebuild server.
@@ -44,3 +44,7 @@ commands:
     description: Check your remaining progress towards your advancements.
     usage: /advancements <advancement_name>
     permission: ptfb.commands.advancements
+  slide:
+    description: A catchall command for slide stuff
+    usage: /slide <subcommand> <slide>
+    permission: ptfb.in-progress-testing

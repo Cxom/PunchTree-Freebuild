@@ -49,4 +49,11 @@ public class ParticleShapes {
             spawnParticle(center.clone().add(Math.cos(d) * radius, 0, Math.sin(d) * radius));
         }
     }
+
+    public static void drawArc(Location center, double start, double end, double radius, int steps) {
+        double stepSize = (end - start) * (2. * Math.PI) / (double) steps;
+        for (double d = start * (2 * Math.PI); d < end * (2 * Math.PI); d += stepSize) {
+            spawnParticle(center.clone().add(Math.cos(d) * radius, 0, Math.sin(d) * radius));
+        }
+    }
 }
