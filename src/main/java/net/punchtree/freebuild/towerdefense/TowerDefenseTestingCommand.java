@@ -4,9 +4,14 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class TowerDefenseTestingCommand implements CommandExecutor {
+import java.util.List;
+
+public class TowerDefenseTestingCommand implements CommandExecutor, TabCompleter {
 
     // ===== Placing tower functionality =====
     // Right clicking on placeable ground opens a menu for choosing a tower type
@@ -57,4 +62,8 @@ public class TowerDefenseTestingCommand implements CommandExecutor {
         return true;
     }
 
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        return List.of("test-path", "spawn-mob", "register-me");
+    }
 }

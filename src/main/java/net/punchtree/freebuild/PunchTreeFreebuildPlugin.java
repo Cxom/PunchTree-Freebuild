@@ -92,7 +92,9 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     private void initializeTowerDefense() {
         towerDefenseMapManager = new TowerDefenseMapManager();
         towerDefensePlayerManager = new TowerDefensePlayerManager();
-        getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
+        TowerDefenseTestingCommand towerDefenseTestingCommand = new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager);
+        getCommand("towerdefense").setExecutor(towerDefenseTestingCommand);
+        getCommand("towerdefense").setTabCompleter(towerDefenseTestingCommand);
         Bukkit.getPluginManager().registerEvents(new TowerBuildingListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new TowerDefenseQuitListener(towerDefensePlayerManager), this);
         Bukkit.getPluginManager().registerEvents(new TowerDefenseHotbarUiListener(towerDefensePlayerManager), this);
