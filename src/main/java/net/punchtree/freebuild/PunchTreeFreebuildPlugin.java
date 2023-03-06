@@ -20,10 +20,14 @@ import net.punchtree.freebuild.heartsigns.HeartSignListener;
 import net.punchtree.freebuild.parkour.ParkourListener;
 import net.punchtree.freebuild.playingcards.PlayingCardCommands;
 import net.punchtree.freebuild.playingcards.PlayingCardInteractListener;
+import net.punchtree.freebuild.ptfbminion.OnMinecraftMessage;
+import net.punchtree.freebuild.ptfbminion.PtfbMinion;
 import net.punchtree.freebuild.towerdefense.*;
 import net.punchtree.freebuild.towerdefense.tower.TowerDefenseHotbarUiListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.concurrent.Executors;
 
 public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
@@ -40,6 +44,11 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     private BilliardsManager billiardsManager;
 
     private IntegerFlag NUMBER_OF_CLAIMS_FLAG;
+    private static PtfbMinion ptfbMinion;
+
+    public static PtfbMinion getPtfbMinion() {
+        return ptfbMinion;
+    }
 
     // TODO confirm this fires before WorldGuard is enabled (if not, does the STARTUP property need to be changed in the plugin.yml?)
     @Override
@@ -57,6 +66,12 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
         nightTimeRunnable = new NightTimeRunnable(Bukkit.getWorld("world"));
         nightTimeRunnable.scheduleRepeatingTaskForTime(13000L);
+
+        PtfbConfig config = new PtfbConfig(this);
+        String token = config.getDiscordToken();
+
+        ptfbMinion = new PtfbMinion(token, Executors.newSingleThreadExecutor());
+        ptfbMinion.start();
 
         setCommandExecutors();
 
@@ -87,6 +102,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new OnPlayerDamageEntity(), this);
         Bukkit.getPluginManager().registerEvents(new PlayingCardInteractListener(), this);
         Bukkit.getPluginManager().registerEvents(new NetherPortalListener(), this);
+        Bukkit.getPluginManager().registerEvents(new OnMinecraftMessage(), this);
     }
 
     private void initializeTowerDefense() {
@@ -126,6 +142,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
             Bukkit.getScoreboardManager().getMainScoreboard().getTeam("afk").unregister();
         }
         RosterManager.getRoster("afk").wipeRoster();
+        ptfbMinion.stop();
     }
 
     public void setNightTimeRunnable(NightTimeRunnable nightTimeRunnable, long startTime) {
