@@ -62,7 +62,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
         nightTimeRunnable = new NightTimeRunnable(Bukkit.getWorld("world"));
         nightTimeRunnable.scheduleRepeatingTaskForTime(13000L);
-        witherFightManager = new WitherFightManager();
+//        witherFightManager = new WitherFightManager();
 
         slideManager = new SlideManager();
 
@@ -96,6 +96,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new OnPlayerDamageEntity(), this);
         Bukkit.getPluginManager().registerEvents(new PlayingCardInteractListener(), this);
         Bukkit.getPluginManager().registerEvents(new NetherPortalListener(), this);
+//        Bukkit.getPluginManager().registerEvents(witherFightManager, this);
     }
 
     private void initializeTowerDefense() {
@@ -137,7 +138,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
             Bukkit.getScoreboardManager().getMainScoreboard().getTeam("afk").unregister();
         }
         RosterManager.getRoster("afk").wipeRoster();
-        witherFightManager.onDisable();
+//        witherFightManager.onDisable();
         slideManager.onDisable();
     }
 
