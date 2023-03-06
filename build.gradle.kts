@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("io.papermc.paperweight.userdev") version "1.4.1"
+    id("com.github.johnrengelman.shadow") version "7.1.0"
 }
 
 group = "net.punchtree"
@@ -8,6 +9,7 @@ version = "1.0-SNAPSHOT"
 description = "Custom functionality for the PunchTree freebuild server."
 
 repositories {
+    mavenCentral()
     maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
     maven { url = uri("https://maven.enginehub.org/repo/") }
     maven { url = uri("https://jitpack.io") }
@@ -34,6 +36,8 @@ dependencies {
             dependencies("oro:oro:2.0.8:jar")
         }
     }
+
+    implementation("net.dv8tion:JDA:5.0.0-beta.5")
 }
 
 tasks {
@@ -59,10 +63,21 @@ task("uploadToServer") {
     }
 }
 
+tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+    mergeServiceFiles()
+    dependencies {
+        exclude(dependency("com.sk89q.worldguard:worldguard-bukkit"))
+        exclude(dependency("net.punchtree:punchtree-util"))
+    }
+    relocate("net.dv8tion", "shaded.net.dv8tion")
+    minimize()
+    archiveFileName.set("${project.name}-${project.version}.jar")
+}
+
 task("buildAndPublish") {
-    dependsOn("build")
+    dependsOn("shadowJar")
     dependsOn("uploadToServer")
-    tasks.findByName("uploadToServer")!!.mustRunAfter("build")
+    tasks.findByName("uploadToServer")!!.mustRunAfter("shadowJar")
 }
 
 java {
