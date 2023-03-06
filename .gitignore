@@ -9,3 +9,4 @@ bin/*
 /.idea/
 .gradle
 /build/
+config.yml
