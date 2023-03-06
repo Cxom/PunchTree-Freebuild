@@ -4,7 +4,6 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.flags.IntegerFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
-import net.punchtree.freebuild.commands.AdvancementsCommand;
 import net.punchtree.freebuild.afk.AfkCommand;
 import net.punchtree.freebuild.afk.AfkPlayerListener;
 import net.punchtree.freebuild.afk.RosterManager;
@@ -13,7 +12,9 @@ import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
 import net.punchtree.freebuild.billiards.BilliardsCommand;
 import net.punchtree.freebuild.billiards.BilliardsManager;
 import net.punchtree.freebuild.billiards.BilliardsShootListener;
+import net.punchtree.freebuild.bossfight.WitherFightManager;
 import net.punchtree.freebuild.claiming.commands.ClaimTestingCommand;
+import net.punchtree.freebuild.commands.AdvancementsCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
 import net.punchtree.freebuild.dimension.NetherPortalListener;
 import net.punchtree.freebuild.heartsigns.HeartSignListener;
@@ -22,6 +23,8 @@ import net.punchtree.freebuild.playingcards.PlayingCardCommands;
 import net.punchtree.freebuild.playingcards.PlayingCardInteractListener;
 import net.punchtree.freebuild.towerdefense.*;
 import net.punchtree.freebuild.towerdefense.tower.TowerDefenseHotbarUiListener;
+import net.punchtree.freebuild.waterparks.SlideManager;
+import net.punchtree.freebuild.waterparks.SlideTestingCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -30,6 +33,8 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     private static PunchTreeFreebuildPlugin instance;
     private TowerDefenseMapManager towerDefenseMapManager;
     private TowerDefensePlayerManager towerDefensePlayerManager;
+    private WitherFightManager witherFightManager;
+    private SlideManager slideManager;
 
     public static PunchTreeFreebuildPlugin getInstance() {
         return instance;
@@ -57,6 +62,9 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
         nightTimeRunnable = new NightTimeRunnable(Bukkit.getWorld("world"));
         nightTimeRunnable.scheduleRepeatingTaskForTime(13000L);
+        witherFightManager = new WitherFightManager();
+
+        slideManager = new SlideManager();
 
         setCommandExecutors();
 
@@ -74,6 +82,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         getCommand("afk").setExecutor(new AfkCommand());
         getCommand("playingcards").setExecutor(new PlayingCardCommands());
         getCommand("advancements").setExecutor(new AdvancementsCommand());
+        getCommand("slide").setExecutor(new SlideTestingCommand(slideManager));
     }
 
     private void registerEvents() {
@@ -128,6 +137,8 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
             Bukkit.getScoreboardManager().getMainScoreboard().getTeam("afk").unregister();
         }
         RosterManager.getRoster("afk").wipeRoster();
+        witherFightManager.onDisable();
+        slideManager.onDisable();
     }
 
     public void setNightTimeRunnable(NightTimeRunnable nightTimeRunnable, long startTime) {

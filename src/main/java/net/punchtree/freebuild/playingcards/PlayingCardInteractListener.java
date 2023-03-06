@@ -247,6 +247,7 @@ public class PlayingCardInteractListener implements Listener {
 
 
 
+    // TODO see if cards can skip the manual conversion from yaw to rotation
     private Rotation getRotationForYaw(double yaw) {
         if (Math.abs(yaw) > 135) return Rotation.NONE;
         else if (Math.abs(yaw) < 45) return Rotation.FLIPPED;
