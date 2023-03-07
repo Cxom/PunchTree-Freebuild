@@ -14,7 +14,7 @@ public class OnMinecraftMessage implements Listener {
         ptfbMinion.execute(() -> {
             String plainMessage = PlainTextComponentSerializer.plainText().serialize(event.message());
             String plainDisplayName = PlainTextComponentSerializer.plainText().serialize(event.getPlayer().displayName());
-            ptfbMinion.getCrossServerChatChannel().sendMessage("**" + plainDisplayName + " > **" + plainMessage).queue();
+            ptfbMinion.getCrossServerChatChannel().sendMessage(MessageUtils.escapeEmojis("**" + plainDisplayName + " > **" + plainMessage)).queue();
         });
     }
 }
