@@ -1,7 +1,6 @@
 package net.punchtree.freebuild.ambientvoting;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
 import org.bukkit.World;
@@ -9,48 +8,44 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class NightTimeRunnable extends BukkitRunnable {
 
-    private static final Component skipNightText;
-    private static final Component nightProgressBarTitle;
-    private static final Component skipNightFailedText;
-    private static final Component skipNightSuccessText;
-    private Vote currentNightVote;
+    private static final Component SKIP_NIGHT_TEXT = Component
+            .text("The sun has begun to set across the land!\n", NamedTextColor.AQUA)
+            .append(Component.text("Type or click ", NamedTextColor.AQUA))
+            .append(Component.text("[/vskip night] ", NamedTextColor.GOLD))
+            .append(Component.text("to vote skip the night.", NamedTextColor.AQUA));
+
+    private static final Component NIGHT_PROGRESS_BAR_TITLE = Component
+            .text("Type ", NamedTextColor.AQUA)
+            .append(Component.text("/vskip night ", NamedTextColor.GOLD))
+            .append(Component.text("to vote skip the night.", NamedTextColor.AQUA));
+
+    private static final Component SKIP_NIGHT_FAILED_TEXT = Component
+            .text("The vote to skip the night has ", NamedTextColor.AQUA)
+            .append(Component.text("failed", NamedTextColor.RED))
+            .append(Component.text("!", NamedTextColor.AQUA));
+
+    private static final Component SKIP_NIGHT_SUCCESS_TEXT = Component
+            .text("The vote to skip the night has ", NamedTextColor.AQUA)
+            .append(Component.text("succeeded", NamedTextColor.GREEN))
+            .append(Component.text("!", NamedTextColor.AQUA));
+
     private final World world;
-    private final PunchTreeFreebuildPlugin ptfbInstance;
+    private final PunchTreeFreebuildPlugin plugin;
+    private Vote currentNightVote;
 
-    static {
-        nightProgressBarTitle = Component
-                .text("Type ", NamedTextColor.AQUA)
-                .append(Component.text("/vskip night ", NamedTextColor.GOLD))
-                .append(Component.text("to vote skip the night.", NamedTextColor.AQUA));
-
-        skipNightFailedText = Component
-                .text("The vote to skip the night has ", NamedTextColor.AQUA)
-                .append(Component.text("failed", NamedTextColor.RED))
-                .append(Component.text("!", NamedTextColor.AQUA));
-
-        skipNightSuccessText = Component
-                .text("The vote to skip the night has ", NamedTextColor.AQUA)
-                .append(Component.text("succeeded", NamedTextColor.GREEN))
-                .append(Component.text("!", NamedTextColor.AQUA));
-
-        skipNightText = Component
-                .text("The sun has begun to set across the land!\n", NamedTextColor.AQUA)
-                .append(Component.text("Type or click ", NamedTextColor.AQUA))
-                .append(Component.text("[/vskip night] ", NamedTextColor.GOLD))
-                .append(Component.text("to vote skip the night.", NamedTextColor.AQUA))
-                .clickEvent(ClickEvent.runCommand("/vskip night"));
-    }
+    private static final long TICKS_PER_DAY = 24000L;
+    private static final long START_OF_NIGHT_TICK = 13000L;
 
     public NightTimeRunnable(World world) {
         this.world = world;
-        this.ptfbInstance = PunchTreeFreebuildPlugin.getInstance();
+        this.plugin = PunchTreeFreebuildPlugin.getInstance();
         this.currentNightVote = createVote();
     }
 
     @Override
     public void run() {
         currentNightVote = createVote();
-        currentNightVote.runTaskTimer(ptfbInstance, 20L, 20L);
+        currentNightVote.runTaskTimer(plugin, 20L, 20L);
     }
 
     public Vote getCurrentNightVote() {
@@ -58,28 +53,32 @@ public class NightTimeRunnable extends BukkitRunnable {
     }
 
     private boolean shouldCancel() {
-        return world.getTime() < 13000L;
+        return world.getTime() < START_OF_NIGHT_TICK;
     }
 
     public void scheduleRepeatingTaskForTime(long timeInTicks) {
-        runTaskTimer(ptfbInstance, calcDelay(timeInTicks), 24000L);
+        runTaskTimer(plugin, calcDelay(timeInTicks), TICKS_PER_DAY);
     }
 
     private long calcDelay(long startTick) {
-        return (startTick - world.getTime()) >= 0 ? startTick - world.getTime() : (startTick - world.getTime()) + 24000L;
+        long delay = startTick - world.getTime();
+        if (delay < 0) {
+            delay += TICKS_PER_DAY;
+        }
+        return delay;
     }
 
     private Vote createVote() {
-        return new  Vote(
-                skipNightText,
-                skipNightSuccessText,
-                skipNightFailedText,
-                nightProgressBarTitle,
+        return new Vote(
+                SKIP_NIGHT_TEXT,
+                SKIP_NIGHT_SUCCESS_TEXT,
+                SKIP_NIGHT_FAILED_TEXT,
+                NIGHT_PROGRESS_BAR_TITLE,
                 0.6f,
                 voteResult -> {
-                    if(voteResult) {
+                    if (voteResult) {
                         world.setTime(0L);
-                        ptfbInstance.setNightTimeRunnable(new NightTimeRunnable(world), 13000L);
+                        plugin.setNightTimeRunnable(new NightTimeRunnable(world), START_OF_NIGHT_TICK);
                     }
                 },
                 this::shouldCancel);
