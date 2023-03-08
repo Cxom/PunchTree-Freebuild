@@ -58,9 +58,7 @@ public class AmbientVoteCommand implements CommandExecutor, TabCompleter, Listen
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        if (!(sender instanceof Player player)) {
-            return true;
-        }
+        if (!(sender instanceof Player player)) return true;
 
         World worldToSkip = Bukkit.getWorld("world");
         //TODO: Add support for skipping other worlds and get rid of this assertion
@@ -121,14 +119,7 @@ public class AmbientVoteCommand implements CommandExecutor, TabCompleter, Listen
     @EventHandler
     public void onWeatherChange(WeatherChangeEvent event) {
         World world = event.getWorld();
-
-        if (!world.getName().equals("world")) {
-            return;
-        }
-
-        if (event.isCancelled() || !event.toWeatherState()) {
-            return;
-        }
+        if (!world.getName().equals("world") || event.isCancelled() || !event.toWeatherState()) return;
 
         Consumer<Boolean> voteAction = voteResult -> {
             if (voteResult) {
@@ -162,9 +153,7 @@ public class AmbientVoteCommand implements CommandExecutor, TabCompleter, Listen
     @EventHandler
     public void onCommandPreProcessEvent(PlayerCommandPreprocessEvent event) {
         String commandMessage = event.getMessage().toLowerCase();
-        if (!commandMessage.startsWith("/time ") && !commandMessage.startsWith("/etime ")) {
-            return;
-        }
+        if (!commandMessage.startsWith("/time ") && !commandMessage.startsWith("/etime ")) return;
 
         new BukkitRunnable() {
             @Override
