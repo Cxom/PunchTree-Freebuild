@@ -9,14 +9,14 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AfkPlayerListener implements Listener {
 
-    private static final Map<UUID, Long> lastActivity = new HashMap<>();
+    private static final ConcurrentHashMap<UUID, Long> lastActivity = new ConcurrentHashMap<>();
 
     public static BukkitTask autoAfkTask;
 
