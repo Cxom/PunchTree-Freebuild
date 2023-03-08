@@ -4,8 +4,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
-import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
-import net.punchtree.freebuild.ambientvoting.Vote;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -52,9 +50,9 @@ public class AmbientVoteCommand implements CommandExecutor, Listener {
         skipWeatherText = Component
                 .text("Looks like the weather has taken a turn for the worse!\n", NamedTextColor.AQUA)
                 .append(Component.text("Type or click ", NamedTextColor.AQUA))
-                .append(Component.text("[/vskip weather] ", NamedTextColor.GOLD))
-                .append(Component.text("to vote skip the storm.", NamedTextColor.AQUA))
-                .clickEvent(ClickEvent.runCommand("/vskip weather"));
+                .append(Component.text("[/vskip weather] ", NamedTextColor.GOLD)
+                        .clickEvent(ClickEvent.runCommand("/vskip weather")))
+                .append(Component.text("to vote skip the storm.", NamedTextColor.AQUA));
 
         notStormingMessage = Component
                 .text("Its not storming right now!", NamedTextColor.RED);
