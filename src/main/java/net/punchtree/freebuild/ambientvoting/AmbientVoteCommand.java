@@ -121,14 +121,7 @@ public class AmbientVoteCommand implements CommandExecutor, TabCompleter, Listen
     @EventHandler
     public void onWeatherChange(WeatherChangeEvent event) {
         World world = event.getWorld();
-
-        if (!world.getName().equals("world")) {
-            return;
-        }
-
-        if (event.isCancelled() || !event.toWeatherState()) {
-            return;
-        }
+        if (!world.getName().equals("world") || event.isCancelled() || !event.toWeatherState()) return;
 
         Consumer<Boolean> voteAction = voteResult -> {
             if (voteResult) {
@@ -162,9 +155,7 @@ public class AmbientVoteCommand implements CommandExecutor, TabCompleter, Listen
     @EventHandler
     public void onCommandPreProcessEvent(PlayerCommandPreprocessEvent event) {
         String commandMessage = event.getMessage().toLowerCase();
-        if (!commandMessage.startsWith("/time ") && !commandMessage.startsWith("/etime ")) {
-            return;
-        }
+        if (!commandMessage.startsWith("/time ") && !commandMessage.startsWith("/etime ")) return;
 
         new BukkitRunnable() {
             @Override
