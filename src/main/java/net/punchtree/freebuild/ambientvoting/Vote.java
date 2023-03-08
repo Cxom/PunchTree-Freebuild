@@ -20,36 +20,36 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class Vote extends BukkitRunnable {
+
     private final Component startMessage;
     private final Component successMessage;
     private final Component failureMessage;
     private final Component progressBarTitle;
     private final BossBar progressBar;
     private final Consumer<Boolean> onVoteEnd;
-    private final Supplier<Boolean> shouldCancel;
+    private final Supplier<Boolean> isCancelled;
     private Audience currentAudience;
     private final float requiredVotePercentage;
     private final HashSet<UUID> activeVoters = new HashSet<>();
 
-    private static final Component voteCastMessage = Component
+    private static final Component VOTE_CAST_MESSAGE = Component
             .text("Your vote has been cast!", NamedTextColor.AQUA);
 
-    private static final Component voteAlreadyCastMessage = Component
+    private static final Component VOTE_ALREADY_CAST_MESSAGE = Component
             .text("Your vote has already been cast!", NamedTextColor.RED);
 
-    private static final Component noActiveVoteMessage = Component
-            .text("There's no vote happening right now!", NamedTextColor.RED);
+    private static final float PROGRESS_DECREMENT = 0.05f;
 
-    public Vote(Component startMessage, Component successMessage, Component failureMessage, Component progressBarTitle, float requiredVotePercentage, Consumer<Boolean> onVoteEnd, Supplier<Boolean> shouldCancel) {
-
+    public Vote(Component startMessage, Component successMessage, Component failureMessage, Component progressBarTitle,
+                float requiredVotePercentage, Consumer<Boolean> onVoteEnd, Supplier<Boolean> isCancelled) {
         this.startMessage = startMessage;
         this.successMessage = successMessage;
         this.failureMessage = failureMessage;
         this.progressBarTitle = progressBarTitle;
         this.requiredVotePercentage = requiredVotePercentage;
-        this.progressBar = BossBar.bossBar(appendVoteCount(), 1.0f, BossBar.Color.GREEN, BossBar.Overlay.NOTCHED_20);
+        this.progressBar = BossBar.bossBar(createProgressBarComponent(), 1.0f, BossBar.Color.GREEN, BossBar.Overlay.NOTCHED_20);
         this.onVoteEnd = onVoteEnd;
-        this.shouldCancel = shouldCancel;
+        this.isCancelled = isCancelled;
         this.currentAudience = Audience.audience(Bukkit.getOnlinePlayers());
     }
 
@@ -57,32 +57,33 @@ public class Vote extends BukkitRunnable {
     public void run() {
         currentAudience = Audience.audience(Bukkit.getOnlinePlayers());
 
-        if(shouldCancel.get()) {
+        // Cancel the vote if necessary
+        if (isCancelled.get()) {
             this.cancel();
             currentAudience.hideBossBar(progressBar);
             return;
         }
 
+        // End the vote if the progress is 0 or the required votes have been cast
         if (progressBar.progress() == 0.0f || activeVoters.size() >= calculateRequiredVotes()) {
-
-            if (activeVoters.size() < calculateRequiredVotes()) {
-                currentAudience.sendMessage(failureMessage);
-                onVoteEnd.accept(false);
-            } else {
-                currentAudience.sendMessage(successMessage);
-                onVoteEnd.accept(true);
-            }
+            boolean votePassed = activeVoters.size() >= calculateRequiredVotes();
+            currentAudience.sendMessage(votePassed ? successMessage : failureMessage);
+            onVoteEnd.accept(votePassed);
             currentAudience.hideBossBar(progressBar);
             this.cancel();
             return;
         }
-        progressBar.progress(Math.max(progressBar.progress() - 0.05f, 0.0f));
-        progressBar.name(appendVoteCount());
+
+        // Decrement the progress and update the boss bar
+        progressBar.progress(Math.max(progressBar.progress() - PROGRESS_DECREMENT, 0.0f));
+        progressBar.name(createProgressBarComponent());
         currentAudience.showBossBar(progressBar);
     }
 
-    @Override @NotNull
-    public synchronized BukkitTask runTaskTimer(@NotNull Plugin plugin, long delay, long period) throws IllegalArgumentException, IllegalStateException {
+
+    @Override
+    public synchronized @NotNull BukkitTask runTaskTimer(@NotNull Plugin plugin, long delay, long period)
+            throws IllegalArgumentException, IllegalStateException {
         currentAudience.sendMessage(startMessage);
         currentAudience.showBossBar(progressBar);
         currentAudience.playSound(Sound.sound(Key.key("minecraft:block.note_block.chime"), Sound.Source.MASTER, 1.0f, 1.5f));
@@ -90,32 +91,35 @@ public class Vote extends BukkitRunnable {
     }
 
     private int calculateRequiredVotes() {
+        int totalPlayers = Bukkit.getOnlinePlayers().size();
         int afkPlayers = RosterManager.getRoster("afk").getRoster().size();
-        return (int) (Math.max((Bukkit.getOnlinePlayers().size() - afkPlayers) * requiredVotePercentage, 1f));
+        int activePlayers = totalPlayers - afkPlayers;
+
+        return (int) Math.max(activePlayers * requiredVotePercentage, 1);
     }
 
-    private Component appendVoteCount() {
+    private Component createProgressBarComponent() {
+        int votesNeeded = calculateRequiredVotes();
+        int votesCast = activeVoters.size();
+
+        Component voteCount = Component.text(votesCast + "/" + votesNeeded, NamedTextColor.GOLD);
+
         return progressBarTitle
-                .append(Component.text(" : ")
-                .append(Component.text(
-                        activeVoters.size()
-                        + "/"
-                        + calculateRequiredVotes()
-                        , NamedTextColor.GOLD)));
+                .append(Component.text(" : "))
+                .append(voteCount);
     }
 
     public void castVote(Player voter) {
-        if(this.isCancelled()) {
-            voter.sendMessage(noActiveVoteMessage);
-            return;
+        if (this.isCancelled.get()) {
+            throw new IllegalStateException("Vote is cancelled");
         }
 
-        if(activeVoters.contains(voter.getUniqueId())) {
-            voter.sendMessage(voteAlreadyCastMessage);
+        if (activeVoters.contains(voter.getUniqueId())) {
+            voter.sendMessage(VOTE_ALREADY_CAST_MESSAGE);
             return;
         }
         activeVoters.add(voter.getUniqueId());
-        voter.sendMessage(voteCastMessage);
+        voter.sendMessage(VOTE_CAST_MESSAGE);
     }
 
     public void removeVote(Player voter) {
