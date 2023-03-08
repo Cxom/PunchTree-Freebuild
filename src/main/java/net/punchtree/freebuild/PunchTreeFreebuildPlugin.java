@@ -21,6 +21,8 @@ import net.punchtree.freebuild.heartsigns.HeartSignListener;
 import net.punchtree.freebuild.parkour.ParkourListener;
 import net.punchtree.freebuild.playingcards.PlayingCardCommands;
 import net.punchtree.freebuild.playingcards.PlayingCardInteractListener;
+import net.punchtree.freebuild.ptfbminion.MinionOnPlayerJoin;
+import net.punchtree.freebuild.ptfbminion.MinionOnPlayerLeave;
 import net.punchtree.freebuild.ptfbminion.OnMinecraftMessage;
 import net.punchtree.freebuild.ptfbminion.PtfbMinion;
 import net.punchtree.freebuild.towerdefense.*;
@@ -113,6 +115,8 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new NetherPortalListener(), this);
 //        Bukkit.getPluginManager().registerEvents(witherFightManager, this);
         Bukkit.getPluginManager().registerEvents(new OnMinecraftMessage(), this);
+        Bukkit.getPluginManager().registerEvents(new MinionOnPlayerJoin(), this);
+        Bukkit.getPluginManager().registerEvents(new MinionOnPlayerLeave(), this);
     }
 
     private void initializeTowerDefense() {
