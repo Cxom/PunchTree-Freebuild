@@ -38,6 +38,9 @@ public class Vote extends BukkitRunnable {
     private static final Component VOTE_ALREADY_CAST_MESSAGE = Component
             .text("Your vote has already been cast!", NamedTextColor.RED);
 
+    private static final Component NO_VOTE_IN_PROGRESS = Component.text(
+            "There is no vote in progress!", NamedTextColor.RED);
+
     private static final float PROGRESS_DECREMENT = 0.05f;
 
     public Vote(Component startMessage, Component successMessage, Component failureMessage, Component progressBarTitle,
@@ -110,16 +113,22 @@ public class Vote extends BukkitRunnable {
     }
 
     public void castVote(Player voter) {
-        if (this.isCancelled.get()) {
-            throw new IllegalStateException("Vote is cancelled");
-        }
+        try {
+            if (this.isCancelled()) {
+                voter.sendMessage(NO_VOTE_IN_PROGRESS);
+                return;
+            }
 
-        if (activeVoters.contains(voter.getUniqueId())) {
-            voter.sendMessage(VOTE_ALREADY_CAST_MESSAGE);
-            return;
+            if (activeVoters.contains(voter.getUniqueId())) {
+                voter.sendMessage(VOTE_ALREADY_CAST_MESSAGE);
+                return;
+            }
+
+            activeVoters.add(voter.getUniqueId());
+            voter.sendMessage(VOTE_CAST_MESSAGE);
+        } catch (IllegalStateException e) {
+            voter.sendMessage(NO_VOTE_IN_PROGRESS);
         }
-        activeVoters.add(voter.getUniqueId());
-        voter.sendMessage(VOTE_CAST_MESSAGE);
     }
 
     public void removeVote(Player voter) {
