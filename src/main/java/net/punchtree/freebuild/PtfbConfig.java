@@ -8,6 +8,7 @@ import java.io.File;
 
 public class PtfbConfig {
     private String discordToken;
+    private String channelID;
 
     public PtfbConfig(JavaPlugin plugin) {
         load(plugin);
@@ -15,6 +16,10 @@ public class PtfbConfig {
 
     public String getDiscordToken() {
         return discordToken;
+    }
+
+    public String getDiscordChannelID() {
+        return channelID;
     }
 
     private void load(JavaPlugin plugin) {
@@ -25,5 +30,6 @@ public class PtfbConfig {
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
         this.discordToken = config.getString("discord.token");
+        this.channelID = config.getString("discord.channelID");
     }
 }
