@@ -1,4 +1,4 @@
-package net.punchtree.freebuild.ptfbminion;
+package net.punchtree.freebuild.arbor;
 
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
@@ -6,13 +6,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-public class MinionOnPlayerLeave implements Listener {
-    PtfbMinion ptfbMinion = PunchTreeFreebuildPlugin.getPtfbMinion();
+public class ArborOnPlayerLeave implements Listener {
+    Arbor arbor = PunchTreeFreebuildPlugin.getArbor();
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent event) {
-        ptfbMinion.execute(() -> {
+        arbor.execute(() -> {
             String displayName = PlainTextComponentSerializer.plainText().serialize(event.getPlayer().displayName());
-            ptfbMinion.getCrossServerChatChannel().sendMessage("```diff" + "\n- " + displayName + "\n```").queue();
+            arbor.getCrossServerChatChannel().sendMessage("```diff" + "\n- " + displayName + "\n```").queue();
         });
     }
 }

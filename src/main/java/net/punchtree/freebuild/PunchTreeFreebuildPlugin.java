@@ -21,10 +21,10 @@ import net.punchtree.freebuild.heartsigns.HeartSignListener;
 import net.punchtree.freebuild.parkour.ParkourListener;
 import net.punchtree.freebuild.playingcards.PlayingCardCommands;
 import net.punchtree.freebuild.playingcards.PlayingCardInteractListener;
-import net.punchtree.freebuild.ptfbminion.MinionOnPlayerJoin;
-import net.punchtree.freebuild.ptfbminion.MinionOnPlayerLeave;
-import net.punchtree.freebuild.ptfbminion.OnMinecraftMessage;
-import net.punchtree.freebuild.ptfbminion.PtfbMinion;
+import net.punchtree.freebuild.arbor.ArborOnPlayerJoin;
+import net.punchtree.freebuild.arbor.ArborOnPlayerLeave;
+import net.punchtree.freebuild.arbor.ArborOnAsyncChat;
+import net.punchtree.freebuild.arbor.Arbor;
 import net.punchtree.freebuild.towerdefense.*;
 import net.punchtree.freebuild.towerdefense.tower.TowerDefenseHotbarUiListener;
 import net.punchtree.freebuild.waterparks.SlideManager;
@@ -51,10 +51,10 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     private BilliardsManager billiardsManager;
 
     private IntegerFlag NUMBER_OF_CLAIMS_FLAG;
-    private static PtfbMinion ptfbMinion;
+    private static Arbor arbor;
 
-    public static PtfbMinion getPtfbMinion() {
-        return ptfbMinion;
+    public static Arbor getArbor() {
+        return arbor;
     }
 
     // TODO confirm this fires before WorldGuard is enabled (if not, does the STARTUP property need to be changed in the plugin.yml?)
@@ -79,9 +79,10 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
         PtfbConfig config = new PtfbConfig(this);
         String token = config.getDiscordToken();
+        String channelID = config.getDiscordChannelID();
 
-        ptfbMinion = new PtfbMinion(token, Executors.newSingleThreadExecutor());
-        ptfbMinion.start();
+        arbor = new Arbor(token, channelID, Executors.newSingleThreadExecutor());
+        arbor.start();
 
         setCommandExecutors();
 
@@ -114,9 +115,9 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new PlayingCardInteractListener(), this);
         Bukkit.getPluginManager().registerEvents(new NetherPortalListener(), this);
 //        Bukkit.getPluginManager().registerEvents(witherFightManager, this);
-        Bukkit.getPluginManager().registerEvents(new OnMinecraftMessage(), this);
-        Bukkit.getPluginManager().registerEvents(new MinionOnPlayerJoin(), this);
-        Bukkit.getPluginManager().registerEvents(new MinionOnPlayerLeave(), this);
+        Bukkit.getPluginManager().registerEvents(new ArborOnAsyncChat(), this);
+        Bukkit.getPluginManager().registerEvents(new ArborOnPlayerJoin(), this);
+        Bukkit.getPluginManager().registerEvents(new ArborOnPlayerLeave(), this);
     }
 
     private void initializeTowerDefense() {
@@ -160,7 +161,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         RosterManager.getRoster("afk").wipeRoster();
 //        witherFightManager.onDisable();
         slideManager.onDisable();
-        ptfbMinion.stop();
+        arbor.stop();
     }
 
     public void setNightTimeRunnable(NightTimeRunnable nightTimeRunnable, long startTime) {

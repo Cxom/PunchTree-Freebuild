@@ -1,4 +1,4 @@
-package net.punchtree.freebuild.ptfbminion;
+package net.punchtree.freebuild.arbor;
 
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -10,9 +10,9 @@ import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
-public class OnDiscordMessage implements EventListener {
+public class ArborOnDiscordMessage implements EventListener {
 
-    PtfbMinion ptfbMinion = PunchTreeFreebuildPlugin.getPtfbMinion();
+    Arbor arbor = PunchTreeFreebuildPlugin.getArbor();
 
     @Override
     public void onEvent(@NotNull GenericEvent event) {
@@ -20,7 +20,7 @@ public class OnDiscordMessage implements EventListener {
             if(messageReceivedEvent.getAuthor().isBot()
                     || messageReceivedEvent.isWebhookMessage()
                     || messageReceivedEvent.getMember() == null
-                    || messageReceivedEvent.getChannel().getIdLong() != ptfbMinion.getCrossServerChatChannel().getIdLong()) {
+                    || messageReceivedEvent.getChannel().getIdLong() != arbor.getCrossServerChatChannel().getIdLong()) {
                 return;
             }
             String memberName = messageReceivedEvent.getMember().getEffectiveName();
