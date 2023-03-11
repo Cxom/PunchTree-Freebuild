@@ -26,7 +26,10 @@ public class ArborOnDiscordMessage implements EventListener {
             String memberName = messageReceivedEvent.getMember().getEffectiveName();
             String plainMessage = MessageUtils.sanitizeMessage(messageReceivedEvent.getMessage().getContentStripped());
             messageReceivedEvent.getMessage().delete().queue();
-            if(plainMessage.isEmpty() || MessageUtils.containsHyperlink(plainMessage)) return;
+            if(plainMessage.isEmpty()) return;
+            if(MessageUtils.containsHyperlink(plainMessage)) {
+                plainMessage = MessageUtils.replaceCharsInUrls(plainMessage);
+            }
 
             messageReceivedEvent.getChannel().sendMessage("**Discord | " + memberName + " > **" + plainMessage).queue();
             Bukkit.getServer().sendMessage(Component.text("Discord", TextColor.fromHexString("#7289DA"))

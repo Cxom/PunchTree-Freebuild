@@ -13,6 +13,9 @@ public class ArborOnAsyncChat implements Listener {
     public void onMinecraftMessage(AsyncChatEvent event) {
         arbor.execute(() -> {
             String plainMessage = PlainTextComponentSerializer.plainText().serialize(event.message());
+            if(MessageUtils.containsHyperlink(plainMessage)) {
+                plainMessage = MessageUtils.replaceCharsInUrls(plainMessage);
+            }
             String plainDisplayName = PlainTextComponentSerializer.plainText().serialize(event.getPlayer().displayName());
             arbor.getCrossServerChatChannel().sendMessage(MessageUtils.escapeEmojis("**" + plainDisplayName + " > **" + plainMessage)).queue();
         });
