@@ -5,6 +5,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class MessageUtils {
+    private static final Pattern pattern = Pattern.compile("(https?://\\S+|www\\.\\S+|\\S+@\\S+|\\S+#\\d{4})");
+    // the above regex pattern will match URLs, Emails, and Discord links
+
     public static String sanitizeMessage(String message) {
         return message.codePoints()
                 .filter(cp -> Character.UnicodeBlock.of(cp).equals(Character.UnicodeBlock.BASIC_LATIN))
@@ -18,19 +21,19 @@ public class MessageUtils {
     }
 
     public static boolean containsHyperlink(String message) {
-        Pattern httpPattern = Pattern.compile("(https?://|www\\.)\\S+");
-        Pattern discordPattern = Pattern.compile("discord(?:app\\.com|\\.gg)[/\\w]*");
-        Pattern emailPattern = Pattern.compile("\\S+@\\S+\\.\\S+");
+        return pattern.matcher(message).find();
+    }
 
-        Matcher matcher = httpPattern.matcher(message);
-        if (matcher.find()) {
-            return true;
+    public static String replaceCharsInUrls(String message) {
+        Matcher matcher = pattern.matcher(message);
+        StringBuilder replacedMessage = new StringBuilder();
+        while (matcher.find()) {
+            String url = matcher.group();
+            String modifiedUrl = url.replaceAll("[./:@]+", " ");
+            matcher.appendReplacement(replacedMessage, modifiedUrl);
         }
-        matcher = discordPattern.matcher(message);
-        if (matcher.find()) {
-            return true;
-        }
-        matcher = emailPattern.matcher(message);
-        return matcher.find();
+        matcher.appendTail(replacedMessage);
+
+        return replacedMessage.toString();
     }
 }
