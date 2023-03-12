@@ -30,7 +30,7 @@ public class AmbientVoteCommand implements CommandExecutor, TabCompleter, Listen
 
     private final List<String> subCommands = Arrays.asList("storm", "night");
     private static final Component SKIP_WEATHER_TEXT = Component.text(
-                    "Looks like the weather has taken a turn for the worse!\n")
+                    "Looks like the weather has taken a turn for the worse!\n", NamedTextColor.AQUA)
             .append(Component.text("Type or click ", NamedTextColor.AQUA))
             .append(Component.text("[/vskip weather] ", NamedTextColor.GOLD)
                     .clickEvent(ClickEvent.runCommand("/vskip weather")))
