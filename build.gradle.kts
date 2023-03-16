@@ -49,6 +49,7 @@ tasks {
 val ftpHostUrl: String by project
 val ftpUsername: String by project
 val ftpPassword: String by project
+val localOutputDir: String? = System.getenv("LOCAL_OUTPUT_DIR")
 
 task("uploadToServer") {
     doLast{
@@ -78,6 +79,22 @@ task("buildAndPublish") {
     dependsOn("shadowJar")
     dependsOn("uploadToServer")
     tasks.findByName("uploadToServer")!!.mustRunAfter("shadowJar")
+}
+
+val buildLocal by tasks.registering(Copy::class) {
+    group = "build"
+    description = "Builds the shaded JAR locally without publishing to the live server."
+
+    from(tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar"))
+    into(provider {
+        if (localOutputDir != null) {
+            project.file(localOutputDir)
+        } else {
+            logger.warn("Environment variable LOCAL_OUTPUT_DIR is not set. Using the default output directory.")
+            project.file("build/libs")
+        }
+    })
+    dependsOn("shadowJar")
 }
 
 java {
