@@ -9,6 +9,10 @@ import net.punchtree.freebuild.afk.AfkPlayerListener;
 import net.punchtree.freebuild.afk.RosterManager;
 import net.punchtree.freebuild.ambientvoting.AmbientVoteCommand;
 import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
+import net.punchtree.freebuild.arbor.Arbor;
+import net.punchtree.freebuild.arbor.ArborOnAsyncChat;
+import net.punchtree.freebuild.arbor.ArborOnPlayerJoin;
+import net.punchtree.freebuild.arbor.ArborOnPlayerLeave;
 import net.punchtree.freebuild.billiards.BilliardsCommand;
 import net.punchtree.freebuild.billiards.BilliardsManager;
 import net.punchtree.freebuild.billiards.BilliardsShootListener;
@@ -16,15 +20,14 @@ import net.punchtree.freebuild.bossfight.WitherFightManager;
 import net.punchtree.freebuild.claiming.commands.ClaimTestingCommand;
 import net.punchtree.freebuild.commands.AdvancementsCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
+import net.punchtree.freebuild.datahandling.DatabaseConnection;
+import net.punchtree.freebuild.datahandling.IODispatcher;
+import net.punchtree.freebuild.datahandling.YamlDatabaseConnection;
 import net.punchtree.freebuild.dimension.NetherPortalListener;
 import net.punchtree.freebuild.heartsigns.HeartSignListener;
 import net.punchtree.freebuild.parkour.ParkourListener;
 import net.punchtree.freebuild.playingcards.PlayingCardCommands;
 import net.punchtree.freebuild.playingcards.PlayingCardInteractListener;
-import net.punchtree.freebuild.arbor.ArborOnPlayerJoin;
-import net.punchtree.freebuild.arbor.ArborOnPlayerLeave;
-import net.punchtree.freebuild.arbor.ArborOnAsyncChat;
-import net.punchtree.freebuild.arbor.Arbor;
 import net.punchtree.freebuild.towerdefense.*;
 import net.punchtree.freebuild.towerdefense.tower.TowerDefenseHotbarUiListener;
 import net.punchtree.freebuild.waterparks.SlideManager;
@@ -32,6 +35,8 @@ import net.punchtree.freebuild.waterparks.SlideTestingCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 
 public class PunchTreeFreebuildPlugin extends JavaPlugin {
@@ -51,10 +56,15 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     private BilliardsManager billiardsManager;
 
     private IntegerFlag NUMBER_OF_CLAIMS_FLAG;
+    private DatabaseConnection configConnection;
     private static Arbor arbor;
+    private static IODispatcher ioDispatcher;
 
     public static Arbor getArbor() {
         return arbor;
+    }
+    public static IODispatcher getIODispatcher() {
+        return ioDispatcher;
     }
 
     // TODO confirm this fires before WorldGuard is enabled (if not, does the STARTUP property need to be changed in the plugin.yml?)
@@ -77,12 +87,9 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
         slideManager = new SlideManager();
 
-        PtfbConfig config = new PtfbConfig(this);
-        String token = config.getDiscordToken();
-        String channelID = config.getDiscordChannelID();
-
-        arbor = new Arbor(token, channelID, Executors.newSingleThreadExecutor());
-        arbor.start();
+        ioDispatcher = new IODispatcher();
+        configConnection = new YamlDatabaseConnection("config.yml");
+        loadConfig();
 
         setCommandExecutors();
 
@@ -162,6 +169,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 //        witherFightManager.onDisable();
         slideManager.onDisable();
         arbor.stop();
+        ioDispatcher.shutdown();
     }
 
     public void setNightTimeRunnable(NightTimeRunnable nightTimeRunnable, long startTime) {
@@ -174,5 +182,22 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
     public NightTimeRunnable getNightTimeRunnable() {
         return nightTimeRunnable;
+    }
+
+    private void loadConfig() {
+        configConnection.connect(true).thenAccept(connection -> {
+            Optional<Map<String, Object>> discord = connection.read("discord");
+            if (discord.isPresent()) {
+                Map<String, Object> discordMap = discord.get();
+                String discordToken = (String) discordMap.get("token");
+                String channelID = (String) discordMap.get("channelID");
+                arbor = new Arbor(discordToken, channelID, Executors.newSingleThreadExecutor());
+                arbor.start();
+            } else {
+                Bukkit.getLogger().severe("Discord configuration not found in config.yml");
+            }
+
+            connection.disconnect();
+        });
     }
 }
