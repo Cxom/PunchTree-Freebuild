@@ -59,6 +59,7 @@ public class YamlDatabaseConnection implements DatabaseConnection {
      */
     @Override
     public CompletableFuture<YamlDatabaseConnection> connect(boolean forced) {
+        enforceConnectionRequired(false);
         return ioDispatcher.submitYamlTask(() -> {
             try {
                 ensureFileExistsIfForced(forced);
@@ -83,12 +84,14 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
-     * Disconnects from the YAML database, saving any changes made to the
-     * YAML file. This method should always be called after finishing operations
-     * with the YamlDatabaseConnection to ensure that data is saved properly.
+     * Disconnects from the YAML database, saving any changes made from the
+     * data map, to the YAML file as well as nullifying any references to cached data.
+     * This method should always be called when the connection is no longer
+     * needed to prevent data loss and to preserve system resources.
      */
     @Override
     public void disconnect() {
+        enforceConnectionRequired(true);
         ioDispatcher.submitYamlTask(() -> {
             try (Writer writer = new FileWriter(filePath.toFile())) {
                 yaml.dump(data, writer);
@@ -122,7 +125,7 @@ public class YamlDatabaseConnection implements DatabaseConnection {
      */
     @Override
     public Map<String, Object> create(String table, Map<String, Object> values) throws PathCreationFailedException, IllegalStateException {
-        checkDisconnected();
+        enforceConnectionRequired(true);
         Map<String, Object> locatedMap = traverseMapByPath(data, table, true);
         if (locatedMap == null) {
             throw new PathCreationFailedException("Failed to create the path: " + table);
@@ -143,7 +146,7 @@ public class YamlDatabaseConnection implements DatabaseConnection {
      **/
     @Override
     public Optional<Map<String, Object>> read(String table) throws IllegalStateException {
-        checkDisconnected();
+        enforceConnectionRequired(true);
         return Optional.ofNullable(traverseMapByPath(data, table, false));
     }
 
@@ -162,7 +165,7 @@ public class YamlDatabaseConnection implements DatabaseConnection {
      */
     @Override
     public Map<String, Object> update(String table, Map<String, Object> values) throws PathCreationFailedException, IllegalStateException {
-        checkDisconnected();
+        enforceConnectionRequired(true);
         Map<String, Object> locatedMap = traverseMapByPath(data, table, false);
         if (locatedMap == null) {
             throw new PathCreationFailedException("Failed to find the path: " + table);
@@ -184,7 +187,7 @@ public class YamlDatabaseConnection implements DatabaseConnection {
      */
     @Override
     public Map<String, Object> delete(String table) throws PathCreationFailedException, IllegalStateException {
-        checkDisconnected();
+        enforceConnectionRequired(true);
         Map<String, Object> locatedMap = traverseMapByPath(data, table, false);
         if (locatedMap == null) {
             throw new PathCreationFailedException("Failed to find the path: " + table);
@@ -206,7 +209,7 @@ public class YamlDatabaseConnection implements DatabaseConnection {
      */
     @Override
     public Map<String, Object> upsert(String table, Map<String, Object> values) throws PathCreationFailedException {
-        checkDisconnected();
+        enforceConnectionRequired(true);
         Map<String, Object> locatedMap = traverseMapByPath(data, table, true);
         if (locatedMap == null) {
             throw new PathCreationFailedException("Failed to create the path: " + table);
@@ -291,17 +294,19 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
-     * Checks if the database connection is disconnected. If it is, throws an
-     * IllegalStateException with a message indicating that the operation
-     * cannot be performed on a disconnected YamlDatabaseConnection.
+     * Ensures that the connection state of the YamlDatabaseConnection matches the expected state.
      *
-     * @throws IllegalStateException If the database connection is disconnected.
+     * @param connectionRequired The expected connection state. If true, the connection is expected
+     *                           to be connected; if false, the connection is expected to be disconnected.
+     * @throws IllegalStateException If the actual connection state does not match the expected state.
      */
-    private void checkDisconnected() {
-        if (isDisconnected) {
-            throw new IllegalStateException("Cannot perform operation on a disconnected YamlDatabaseConnection");
+    private void enforceConnectionRequired(boolean connectionRequired) {
+        if ((connectionRequired && isDisconnected) || (!connectionRequired && !isDisconnected)) {
+            throw new IllegalStateException("Cannot perform operation on a " + (isDisconnected ? "disconnected" : "connected") + " YamlDatabaseConnection");
         }
     }
+
+
 
     /**
      * Ensures the YAML file exists if the 'forced' flag is true.
