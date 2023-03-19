@@ -1,15 +1,18 @@
 package net.punchtree.freebuild.datahandling;
 
 import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
+import org.bukkit.Bukkit;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 
 /**
  * A class for connecting to, reading from, and writing to a YAML database.
@@ -23,6 +26,7 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     private final Yaml yaml;
     private static final IODispatcher ioDispatcher = PunchTreeFreebuildPlugin.getIODispatcher();
     private boolean isDisconnected;
+    private static final Logger LOGGER = Bukkit.getLogger();
 
     /**
      * Constructs a new YamlDatabaseConnection with the specified file path.
@@ -42,29 +46,39 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
-     * Connects to the YAML file and loads its contents into memory.
-     * If the file is empty and 'forced' is true, it initializes an empty map.
+     * Connects to the YAML database and loads the data from the file.
+     * If an exception occurs during the execution of the asynchronous task,
+     * it will be caught and logged to the console.
      *
-     * @param forced If true, creates an empty map when the file is empty; otherwise, throws a RuntimeException.
-     * @return A CompletableFuture that resolves to this YamlDatabaseConnection instance when the connection is established.
+     * @param forced If true, creates the file if it doesn't exist, and
+     *               allows empty files (an empty map will be used as data).
+     *               If false, throws an exception if the file is empty.
+     * @return A CompletableFuture that resolves to this YamlDatabaseConnection
+     *         instance once the connection is established and the data is loaded.
+     *         If an exception occurs, the CompletableFuture resolves to null.
      */
     @Override
     public CompletableFuture<YamlDatabaseConnection> connect(boolean forced) {
         return ioDispatcher.submitYamlTask(() -> {
+            try {
+                ensureFileExistsIfForced(forced);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to ensure file creation", e);
+            }
+
             try (Reader reader = new FileReader(filePath.toFile())) {
                 Map<String, Object> loadedData = yaml.load(reader);
-                if (loadedData == null) {
-                    if (!forced) {
-                        throw new RuntimeException("YAML file is empty: " + filePath);
-                    }
-                    loadedData = new LinkedHashMap<>();
-                }
-                data = loadedData;
+                handleLoadedData(forced, loadedData);
+
             } catch (IOException e) {
                 throw new RuntimeException("Failed to load YAML file", e);
             }
             isDisconnected = false;
             return this;
+        }).exceptionally(ex -> {
+            LOGGER.severe("Error while connecting to YAML database: " + filePath);
+            LOGGER.severe("Exception: " + ex.getMessage());
+            return null;
         });
     }
 
@@ -84,6 +98,10 @@ public class YamlDatabaseConnection implements DatabaseConnection {
             data = null;
             isDisconnected = true;
             return this;
+        }).exceptionally(ex -> {
+            LOGGER.severe("Error while disconnecting from YAML database: " + filePath);
+            LOGGER.severe("Exception: " + ex.getMessage());
+            return null;
         });
     }
 
@@ -177,6 +195,29 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
+     * Upserts (inserts or updates) the given key-value pairs in the specified table.
+     * If the table does not exist, it will be created. If the table exists,
+     * the provided key-value pairs will be updated or added to the table.
+     *
+     * @param table  the table to perform the upsert operation on
+     * @param values a map containing the key-value pairs to be inserted or updated
+     * @return the updated table after performing the upsert operation
+     * @throws PathCreationFailedException if the path creation fails
+     */
+    @Override
+    public Map<String, Object> upsert(String table, Map<String, Object> values) throws PathCreationFailedException {
+        checkDisconnected();
+        Map<String, Object> locatedMap = traverseMapByPath(data, table, true);
+        if (locatedMap == null) {
+            throw new PathCreationFailedException("Failed to create the path: " + table);
+        }
+        locatedMap.putAll(values);
+        return locatedMap;
+    }
+
+
+
+    /**
      * Traverses the YAML database map using the specified path.
      * If the forcePath parameter is true, it creates the necessary structure
      * along the path if it does not exist.
@@ -195,6 +236,9 @@ public class YamlDatabaseConnection implements DatabaseConnection {
             String key = keys[i];
 
             if (i == keys.length - 1) {
+                if (forcePath && !currentMap.containsKey(key)) {
+                    currentMap.put(key, new LinkedHashMap<String, Object>());
+                }
                 return (Map<String, Object>) currentMap.get(key);
             }
 
@@ -206,6 +250,7 @@ public class YamlDatabaseConnection implements DatabaseConnection {
         }
         return currentMap;
     }
+
 
     /**
      * Retrieves or creates the next map in the path based on the current map,
@@ -255,6 +300,40 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     private void checkDisconnected() {
         if (isDisconnected) {
             throw new IllegalStateException("Cannot perform operation on a disconnected YamlDatabaseConnection");
+        }
+    }
+
+    /**
+     * Ensures the YAML file exists if the 'forced' flag is true.
+     * Creates the file and its parent directories if they do not exist.
+     *
+     * @param forced indicates whether to create the file and directories if they do not exist
+     * @throws IOException if there's an issue creating the file or directories
+     */
+    private void ensureFileExistsIfForced(boolean forced) throws IOException {
+        if (forced) {
+            Files.createDirectories(filePath.getParent());
+            if (!Files.exists(filePath)) {
+                Files.createFile(filePath);
+            }
+        }
+    }
+
+    /**
+     * Handles the loaded data from the YAML file.
+     * If the loaded data is null and 'forced' is true, it creates a new empty LinkedHashMap.
+     *
+     * @param forced     indicates whether to create an empty LinkedHashMap if the loaded data is null
+     * @param loadedData the data loaded from the YAML file, can be null
+     */
+    private void handleLoadedData(boolean forced, Map<String, Object> loadedData) {
+        if (loadedData == null) {
+            if (!forced) {
+                throw new RuntimeException("YAML file is empty: " + filePath);
+            }
+            data = new LinkedHashMap<>();
+        } else {
+            data = loadedData;
         }
     }
 
