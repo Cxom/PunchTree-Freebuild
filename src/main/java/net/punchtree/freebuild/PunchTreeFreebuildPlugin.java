@@ -26,6 +26,8 @@ import net.punchtree.freebuild.datahandling.YamlDatabaseConnection;
 import net.punchtree.freebuild.dimension.NetherPortalListener;
 import net.punchtree.freebuild.heartsigns.HeartSignListener;
 import net.punchtree.freebuild.parkour.ParkourListener;
+import net.punchtree.freebuild.player.PtfbPlayerOnPlayerJoin;
+import net.punchtree.freebuild.player.PtfbPlayerOnPlayerQuit;
 import net.punchtree.freebuild.playingcards.PlayingCardCommands;
 import net.punchtree.freebuild.playingcards.PlayingCardInteractListener;
 import net.punchtree.freebuild.towerdefense.*;
@@ -125,6 +127,8 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new ArborOnAsyncChat(), this);
         Bukkit.getPluginManager().registerEvents(new ArborOnPlayerJoin(), this);
         Bukkit.getPluginManager().registerEvents(new ArborOnPlayerLeave(), this);
+        Bukkit.getPluginManager().registerEvents(new PtfbPlayerOnPlayerJoin(), this);
+        Bukkit.getPluginManager().registerEvents(new PtfbPlayerOnPlayerQuit(), this);
     }
 
     private void initializeTowerDefense() {
