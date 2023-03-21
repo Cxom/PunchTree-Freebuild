@@ -15,10 +15,36 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 /**
- * A class for connecting to, reading from, and writing to a YAML database.
- * This class implements the DatabaseConnection interface and provides
- * methods for creating, reading, updating, and deleting tables within
- * a YAML file.
+ * A class representing a connection to a YAML-based database. This class implements the
+ * {@link DatabaseConnection} interface, providing methods to create, read, update, and delete
+ * data from the database.
+ * <p>
+ * The data is stored in a YAML file on disk, and is loaded and saved using the SnakeYAML library.
+ * The file path can be specified when creating a new instance of this class, and the data is stored
+ * as a map of string keys to object values.
+ * <p>
+ * This class is thread-safe and supports asynchronous operations. Connections can be established
+ * and closed using the {@link #connect(boolean)} and {@link #disconnect()} methods, respectively.
+ * Once connected, data can be manipulated using the various CRUD methods provided by the
+ * {@link DatabaseConnection} interface.
+ * <p>
+ * Example usage:
+ * <pre>{@code
+ * YamlDatabaseConnection connection = new YamlDatabaseConnection("data/my_database.yml");
+ * connection.connect(false).thenAccept(conn -> {
+ *     conn.upsert("users.johndoe", Map.of("name", "John Doe", "age", 42));
+ *     conn.update("users.johndoe", Map.of("age", 43, "email", "john.doe@example.com"));
+ *     conn.delete("users.johndoe");
+ *
+ *     Optional<Map<String, Object>> result = conn.read("users.johndoe");
+ *     if (!result.isPresent()) {
+ *         conn.upsert("users.janedoe", Map.of("name", "Jane Doe", "age", 27));
+ *     }
+ *
+ *     conn.save().thenRun(() -> System.out.println("Data saved"));
+ *     conn.disconnect();
+ * });
+ * }</pre>
  */
 public class YamlDatabaseConnection implements DatabaseConnection {
     private Map<String, Object> data;
@@ -29,15 +55,14 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     private static final Logger LOGGER = Bukkit.getLogger();
 
     /**
-     * Constructs a new YamlDatabaseConnection with the specified file path.
+     * Initializes the YamlDatabaseConnection with the specified file path.
      *
-     * @param filePath The path to the YAML file relative to the plugin's data folder.
+     * @param filePath The relative path of the YAML file to be used for storage.
      */
     public YamlDatabaseConnection(String filePath) {
-        // Create a DumperOptions object to control the output format
         DumperOptions options = new DumperOptions();
-        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK); // Use block style for lists and maps
-        options.setPrettyFlow(true); // Indent the output for readability
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setPrettyFlow(true);
 
         this.yaml = new Yaml(options);
 
@@ -46,16 +71,10 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
-     * Connects to the YAML database and loads the data from the file.
-     * If an exception occurs during the execution of the asynchronous task,
-     * it will be caught and logged to the console.
+     * Connects to the YAML database, loading the data into memory.
      *
-     * @param forced If true, creates the file if it doesn't exist, and
-     *               allows empty files (an empty map will be used as data).
-     *               If false, throws an exception if the file is empty.
-     * @return A CompletableFuture that resolves to this YamlDatabaseConnection
-     *         instance once the connection is established and the data is loaded.
-     *         If an exception occurs, the CompletableFuture resolves to null.
+     * @param forced If true, the connection will create the file if it does not exist.
+     * @return A CompletableFuture that resolves with the connected YamlDatabaseConnection.
      */
     @Override
     public CompletableFuture<YamlDatabaseConnection> connect(boolean forced) {
@@ -84,49 +103,45 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
-     * Disconnects from the YAML database, saving any changes made from the
-     * data map, to the YAML file as well as nullifying any references to cached data.
-     * This method should always be called when the connection is no longer
-     * needed to prevent data loss and to preserve system resources.
+     * Asynchronously saves the current data to the YAML file.
+     *
+     * @return A CompletableFuture that resolves with the YamlDatabaseConnection after saving.
      */
-    @Override
-    public void disconnect() {
-        enforceConnectionRequired(true);
-        ioDispatcher.submitYamlTask(() -> {
+    public CompletableFuture<YamlDatabaseConnection> save() {
+        Map<String, Object> dataCopy = new LinkedHashMap<>(data);
+        return ioDispatcher.submitYamlTask(() -> {
             try (Writer writer = new FileWriter(filePath.toFile())) {
-                yaml.dump(data, writer);
+                yaml.dump(dataCopy, writer);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to save YAML file", e);
             }
-            data = null;
-            isDisconnected = true;
             return this;
-        }).exceptionally(ex -> {
-            LOGGER.severe("Error while disconnecting from YAML database: " + filePath);
-            LOGGER.severe("Exception: " + ex.getMessage());
-            return null;
         });
     }
 
     /**
-     * Creates a new table in the YAML database and populates it with the
-     * given values. The table is represented as a nested map within the
-     * YAML file. If the table already exists, its contents will be updated
-     * with the provided values.
+     * Disconnects from the YAML database, saving data to the file and releasing resources.
+     */
+    @Override
+    public void disconnect() {
+        enforceConnectionRequired(true);
+        data = null;
+        isDisconnected = true;
+    }
+
+    /**
+     * Creates a new entry in the specified table with the provided values.
      *
-     * @param table  The path to the table to be created. The path is a
-     *               dot-separated string representing the nested structure
-     *               of the table (e.g., "parent.child").
-     * @param values The values to populate the new table with. The keys in
-     *               the provided map represent the fields in the table.
-     * @return The created table as a map.
-     * @throws PathCreationFailedException If the path to the table could not be created.
-     * @throws IllegalStateException        If the database connection is disconnected.
+     * @param table  The table where the entry should be created.
+     * @param values The values for the new entry.
+     * @return The updated table.
+     * @throws PathCreationFailedException If the specified path cannot be created.
+     * @throws IllegalStateException If the operation is performed on a disconnected YamlDatabaseConnection.
      */
     @Override
     public Map<String, Object> create(String table, Map<String, Object> values) throws PathCreationFailedException, IllegalStateException {
         enforceConnectionRequired(true);
-        Map<String, Object> locatedMap = traverseMapByPath(data, table, true);
+        Map<String, Object> locatedMap = MapUtils.getMapAtPath(data, table, true);
         if (locatedMap == null) {
             throw new PathCreationFailedException("Failed to create the path: " + table);
         }
@@ -135,38 +150,31 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
-     * Reads the contents of a table in the YAML database. If the table
-     * does not exist, an empty Optional is returned.
+     * Reads the values stored in the specified table.
      *
-     * @param table The path to the table to be read. The path is a
-     *              dot-separated string representing the nested structure
-     *              of the table (e.g., "parent.child").
-     * @return An Optional containing the table contents as a map if the table exists, or an empty Optional if the table does not exist.
-     * @throws IllegalStateException If the database connection is disconnected.
-     **/
+     * @param table The table to read from.
+     * @return An Optional containing the table's values if it exists, or an empty Optional if not.
+     * @throws IllegalStateException If the operation is performed on a disconnected YamlDatabaseConnection.
+     */
     @Override
     public Optional<Map<String, Object>> read(String table) throws IllegalStateException {
         enforceConnectionRequired(true);
-        return Optional.ofNullable(traverseMapByPath(data, table, false));
+        return Optional.ofNullable(MapUtils.getMapAtPath(data, table, false));
     }
 
     /**
-     * Updates the contents of a table in the YAML database with the given values.
-     * If the table does not exist, a PathCreationFailedException is thrown.
+     * Updates an existing entry in the specified table with the provided values.
      *
-     * @param table  The path to the table to be updated. The path is a
-     *               dot-separated string representing the nested structure
-     *               of the table (e.g., "parent.child").
-     * @param values The values to update the table with. The keys in
-     *               the provided map represent the fields in the table.
-     * @return The updated table as a map.
-     * @throws PathCreationFailedException If the path to the table could not be found.
-     * @throws IllegalStateException        If the database connection is disconnected.
+     * @param table  The table where the entry should be updated.
+     * @param values The values to update the entry with.
+     * @return The updated table.
+     * @throws PathCreationFailedException If the specified path cannot be found.
+     * @throws IllegalStateException If the operation is performed on a disconnected YamlDatabaseConnection.
      */
     @Override
     public Map<String, Object> update(String table, Map<String, Object> values) throws PathCreationFailedException, IllegalStateException {
         enforceConnectionRequired(true);
-        Map<String, Object> locatedMap = traverseMapByPath(data, table, false);
+        Map<String, Object> locatedMap = MapUtils.getMapAtPath(data, table, false);
         if (locatedMap == null) {
             throw new PathCreationFailedException("Failed to find the path: " + table);
         }
@@ -175,20 +183,17 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
-     * Deletes a table from the YAML database by clearing its contents.
-     * If the table does not exist, a PathCreationFailedException is thrown.
+     * Deletes an existing entry in the specified table.
      *
-     * @param table The path to the table to be deleted. The path is a
-     *              dot-separated string representing the nested structure
-     *              of the table (e.g., "parent.child").
-     * @return The deleted table as a map containing the original data.
-     * @throws PathCreationFailedException If the path to the table could not be found.
-     * @throws IllegalStateException        If the database connection is disconnected.
+     * @param table The table where the entry should be deleted.
+     * @return The deleted entry.
+     * @throws PathCreationFailedException If the specified path cannot be found.
+     * @throws IllegalStateException If the operation is performed on a disconnected YamlDatabaseConnection.
      */
     @Override
     public Map<String, Object> delete(String table) throws PathCreationFailedException, IllegalStateException {
         enforceConnectionRequired(true);
-        Map<String, Object> locatedMap = traverseMapByPath(data, table, false);
+        Map<String, Object> locatedMap = MapUtils.getMapAtPath(data, table, false);
         if (locatedMap == null) {
             throw new PathCreationFailedException("Failed to find the path: " + table);
         }
@@ -197,108 +202,31 @@ public class YamlDatabaseConnection implements DatabaseConnection {
         return clonedMap;
     }
 
-    /**
-     * Upserts (inserts or updates) the given key-value pairs in the specified table.
-     * If the table does not exist, it will be created. If the table exists,
-     * the provided key-value pairs will be updated or added to the table.
-     *
-     * @param table  the table to perform the upsert operation on
-     * @param values a map containing the key-value pairs to be inserted or updated
-     * @return the updated table after performing the upsert operation
-     * @throws PathCreationFailedException if the path creation fails
-     */
-    @Override
-    public Map<String, Object> upsert(String table, Map<String, Object> values) throws PathCreationFailedException {
-        enforceConnectionRequired(true);
-        Map<String, Object> locatedMap = traverseMapByPath(data, table, true);
-        if (locatedMap == null) {
-            throw new PathCreationFailedException("Failed to create the path: " + table);
-        }
-        locatedMap.putAll(values);
-        return locatedMap;
+/**
+ * Updates or inserts an entry in the specified table with the provided values.
+ *
+ * @param table  The table where the entry should be upserted.
+ * @param values The values to update or insert the entry with.
+ * @return The updated table.
+ * @throws PathCreationFailedException If the specified path cannot be created.
+ * @throws IllegalStateException If the operation is performed on a disconnected YamlDatabaseConnection.
+ */
+@Override
+public Map<String, Object> upsert(String table, Map<String, Object> values) throws PathCreationFailedException {
+    enforceConnectionRequired(true);
+    Map<String, Object> locatedMap = MapUtils.getMapAtPath(data, table, true);
+    if (locatedMap == null) {
+        throw new PathCreationFailedException("Failed to create the path: " + table);
     }
-
-
-
-    /**
-     * Traverses the YAML database map using the specified path.
-     * If the forcePath parameter is true, it creates the necessary structure
-     * along the path if it does not exist.
-     *
-     * @param map      The map to traverse.
-     * @param path     The dot-separated path to the desired table (e.g., "parent.child").
-     * @param forcePath If true, creates the necessary structure along the path if it does not exist.
-     * @return The map located at the specified path or null if the path does not exist and forcePath is false.
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> traverseMapByPath(Map<String, Object> map, String path, boolean forcePath) {
-        String[] keys = path.split("\\.");
-        Map<String, Object> currentMap = map;
-
-        for (int i = 0; i < keys.length; i++) {
-            String key = keys[i];
-
-            if (i == keys.length - 1) {
-                if (forcePath && !currentMap.containsKey(key)) {
-                    currentMap.put(key, new LinkedHashMap<String, Object>());
-                }
-                return (Map<String, Object>) currentMap.get(key);
-            }
-
-            currentMap = getNextMap(currentMap, key, forcePath);
-
-            if (currentMap == null) {
-                return null;
-            }
-        }
-        return currentMap;
-    }
-
+    locatedMap.putAll(values);
+    return locatedMap;
+}
 
     /**
-     * Retrieves or creates the next map in the path based on the current map,
-     * key, and forcePath flag.
+     * Enforces connection requirements for CRUD operations.
      *
-     * @param currentMap The current map being traversed.
-     * @param key        The key for the next map.
-     * @param forcePath  If true, creates a new map for the key if it does not exist.
-     * @return The next map in the path or null if the key does not exist and forcePath is false.
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> getNextMap(Map<String, Object> currentMap, String key, boolean forcePath) {
-        Object value = currentMap.get(key);
-        if (currentMap.containsKey(key)) {
-            if (value instanceof Map) {
-                return (Map<String, Object>) value;
-            }
-        }
-
-        if (forcePath) {
-            return createNewMapAndPutInCurrentMap(currentMap, key);
-        }
-
-        return null;
-    }
-
-    /**
-     * Creates a new empty map and puts it in the current map with the specified key.
-     *
-     * @param currentMap The current map being updated.
-     * @param key        The key for the new map.
-     * @return The newly created map.
-     */
-    private Map<String, Object> createNewMapAndPutInCurrentMap(Map<String, Object> currentMap, String key) {
-        Map<String, Object> newMap = new LinkedHashMap<>();
-        currentMap.put(key, newMap);
-        return newMap;
-    }
-
-    /**
-     * Ensures that the connection state of the YamlDatabaseConnection matches the expected state.
-     *
-     * @param connectionRequired The expected connection state. If true, the connection is expected
-     *                           to be connected; if false, the connection is expected to be disconnected.
-     * @throws IllegalStateException If the actual connection state does not match the expected state.
+     * @param connectionRequired If true, checks if the connection is established; if false, checks if the connection is disconnected.
+     * @throws IllegalStateException If the connection status does not match the required state.
      */
     private void enforceConnectionRequired(boolean connectionRequired) {
         if ((connectionRequired && isDisconnected) || (!connectionRequired && !isDisconnected)) {
@@ -306,14 +234,11 @@ public class YamlDatabaseConnection implements DatabaseConnection {
         }
     }
 
-
-
     /**
-     * Ensures the YAML file exists if the 'forced' flag is true.
-     * Creates the file and its parent directories if they do not exist.
+     * Ensures the file exists if the forced flag is true.
      *
-     * @param forced indicates whether to create the file and directories if they do not exist
-     * @throws IOException if there's an issue creating the file or directories
+     * @param forced If true, create the file and its parent directories if they do not exist.
+     * @throws IOException If there's an error creating the file or directories.
      */
     private void ensureFileExistsIfForced(boolean forced) throws IOException {
         if (forced) {
@@ -325,11 +250,10 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
-     * Handles the loaded data from the YAML file.
-     * If the loaded data is null and 'forced' is true, it creates a new empty LinkedHashMap.
+     * Handles the loaded data, initializing the internal data map.
      *
-     * @param forced     indicates whether to create an empty LinkedHashMap if the loaded data is null
-     * @param loadedData the data loaded from the YAML file, can be null
+     * @param forced If true, creates a new LinkedHashMap if the loaded data is null.
+     * @param loadedData The data loaded from the YAML file.
      */
     private void handleLoadedData(boolean forced, Map<String, Object> loadedData) {
         if (loadedData == null) {
@@ -343,17 +267,11 @@ public class YamlDatabaseConnection implements DatabaseConnection {
     }
 
     /**
-     * A custom exception class used for cases when the path creation fails
-     * while attempting to create or locate a table within the YAML database.
+     * A custom exception to be thrown when a path cannot be created or found.
      */
     private static class PathCreationFailedException extends Exception {
-        /**
-         * Constructs a new PathCreationFailedException with the specified detail message.
-         *
-         * @param message The detail message, which is saved for later retrieval by the Throwable.getMessage() method.
-         */
         public PathCreationFailedException(String message) {
-            super(message);
+            super("Failed to create/find the path: " + message);
         }
     }
 }
