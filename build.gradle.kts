@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("io.papermc.paperweight.userdev") version "1.4.1"
+    id("io.papermc.paperweight.userdev") version "1.5.3"
     id("com.github.johnrengelman.shadow") version "7.1.0"
 }
 
@@ -25,8 +25,8 @@ repositories {
 val ftpAntTask by configurations.creating
 
 dependencies {
-    paperDevBundle("1.19.3-R0.1-SNAPSHOT")
-    paperweightDevelopmentBundle("io.papermc.paper:dev-bundle:1.19.3-R0.1-SNAPSHOT")
+    paperDevBundle("1.19.4-R0.1-SNAPSHOT")
+    paperweightDevelopmentBundle("io.papermc.paper:dev-bundle:1.19.4-R0.1-SNAPSHOT")
 
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.1.0-SNAPSHOT")
     compileOnly("net.punchtree:punchtree-util:0.0.1-SNAPSHOT")
@@ -72,7 +72,7 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
     }
     relocate("net.dv8tion", "shaded.net.dv8tion")
     minimize()
-    archiveFileName.set("${project.name}-${project.version}.jar")
+//    archiveFileName.set("${project.name}-${project.version}.jar")
 }
 
 task("buildAndPublish") {
