@@ -78,7 +78,7 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
             return false;
         }
 
-        UUID playersId = player.getUniqueId();
+        UUID claimingPlayersId = player.getUniqueId();
 
         Chunk chunk = player.getLocation().getChunk();
         Block chunkMinBlock = chunk.getBlock(0, player.getWorld().getMinHeight(), 0);
@@ -119,13 +119,13 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
 
-                // Check if it is adjacent to other chunk regions that are mine (we'll deal with other folks claims later)
-                List<Direction> directionsWithAdjacentChunkRegionsOwnedBySamePlayer =
+                // Check if it is adjacent to other chunk regions that are also owned by the claiming player (we'll deal with other folks claims later)
+                List<Direction> directionsWithAdjacentChunkRegionsAlsoOwnedByClaimingPlayer =
                         Arrays.stream(Direction.values())
-                                .filter(direction -> hasAdjacentChunkRegionOwnedByPlayer(regionManager, playersId, chunk, direction))
+                                .filter(direction -> hasAdjacentChunkRegionOwnedByPlayer(regionManager, claimingPlayersId, chunk, direction))
                                 .toList();
 
-                if (directionsWithAdjacentChunkRegionsOwnedBySamePlayer.size() == 0) {
+                if (directionsWithAdjacentChunkRegionsAlsoOwnedByClaimingPlayer.isEmpty()) {
                     // This is establishing a new region!!!!
                     if (!isConfirmed(args, player)) {
                         sendConfirmationPrompt(player);
@@ -133,19 +133,18 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     }
 
                     int personalRegionIndex = 1;
-                    while (regionManager.hasRegion(String.format("%s-%d", playersId, personalRegionIndex))) {
+                    while (regionManager.hasRegion(String.format("%s-%d", claimingPlayersId, personalRegionIndex))) {
                         ++personalRegionIndex;
                     }
-                    String newRegionName = String.format("%s-%d", playersId, personalRegionIndex);
+                    String newRegionName = String.format("%s-%d", claimingPlayersId, personalRegionIndex);
                     ProtectedRegion newParentRegion = new GlobalProtectedRegion(newRegionName);
 
                     ProtectedRegion newChunkRegion = new ProtectedCuboidRegion(chunkRegionName, min, max);
-
                     try {
                         newChunkRegion.setParent(newParentRegion);
                     } catch (ProtectedRegion.CircularInheritanceException e) {
                         // This should never actually be thrown since we're only parenting one freshly created region to another
-                        throw new RuntimeException(e);
+                        throw new AssertionError(e);
                     }
 
                     newParentRegion.setFlag(NUMBER_OF_CLAIMS_FLAG, 1);
@@ -158,14 +157,33 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Chunk region: " + chunkRegionName);
                 } else {
                     // We are appending to an existing region!
-                    String regionName ;
-                    for (Direction direction : Direction.values()) {
-                        if (directionsWithAdjacentChunkRegionsOwnedBySamePlayer.contains(direction)) {
-                            ProtectedRegion adjacentChunkRegion = getAdjacentChunkRegion(regionManager, chunk, direction);
-                        } else {
+                    // There are three things we can find
+                    // 1. A region owned by the claiming player
+                    // 2. A SECOND region ALSO owned by the claiming player
+                    // 3. A claim owned by someone else
 
-                        }
+                    // Right now, we'll deal with the case of only finding a single region owned by the claiming player
+
+                    Direction firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerDirection = directionsWithAdjacentChunkRegionsAlsoOwnedByClaimingPlayer.get(0);
+                    ProtectedRegion firstAdjacentChunkRegionAlsoOwnedByClaimingPlayer = getAdjacentChunkRegion(regionManager, chunk, firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerDirection);
+                    ProtectedRegion firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion = firstAdjacentChunkRegionAlsoOwnedByClaimingPlayer.getParent();
+
+                    ProtectedRegion newChunkRegion = new ProtectedCuboidRegion(chunkRegionName, min, max);
+                    try {
+                        newChunkRegion.setParent(firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion);
+                    } catch (ProtectedRegion.CircularInheritanceException e) {
+                        // This should never actually be thrown since we're only parenting a freshly created region to an existing region
+                        throw new AssertionError(e);
                     }
+
+                    int numberOfClaimsInAdjacentRegionBefore = firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion.getFlag(NUMBER_OF_CLAIMS_FLAG);
+                    // TODO right now we're asserting that the number of claims in the adjacent region is always set, and set correctly
+                    // Ideally, we'd have some sort of region verification/error correction procedure that can be run whenever a flag
+                    // that is expected is not actually there, or otherwise appears to be incorrect/invalid
+                    int numberOfClaimsInAdjacentRegionAfter = numberOfClaimsInAdjacentRegionBefore + 1;
+                    firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion.setFlag(NUMBER_OF_CLAIMS_FLAG, numberOfClaimsInAdjacentRegionAfter);
+
+                    // TODO case 2 and 3
                 }
 
 //            player.sendMessage(ChatColor.RED + "You cannot claim this chunk as it is too close to another claim to the north that is not yours!");
