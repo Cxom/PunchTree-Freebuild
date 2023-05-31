@@ -40,7 +40,10 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
      *  × Claim - any area a player has marked as their own - this is a general domain language term the player knows
      */
 
-    private static final List<String> SUBCOMMANDS = List.of("calc-chunk-index", "create-test-claim", "create-region-with-confirmation");
+    public static final String CALC_CHUNK_INDEX_SUBCOMMAND = "calc-chunk-index";
+    public static final String CREATE_TEST_CHUNK_REGION_SUBCOMMAND = "create-test-chunk-region";
+    public static final String CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND = "create-region-with-confirmation";
+    private static final List<String> SUBCOMMANDS = List.of(CALC_CHUNK_INDEX_SUBCOMMAND, CREATE_TEST_CHUNK_REGION_SUBCOMMAND, CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND);
 
     private static IntegerFlag NUMBER_OF_CLAIMS_FLAG;
 
@@ -95,13 +98,13 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
 
         switch (args[0]) {
             // takes a given location (the player's location) and calculates the chunk index
-            case "calc-chunk-index" -> {
+            case CALC_CHUNK_INDEX_SUBCOMMAND -> {
                 player.sendMessage(String.format("Chunk (%d, %d)", chunk.getX(), chunk.getZ()));
                 player.sendMessage(String.format("Chunk min block (%d, %d)", chunkMinBlock.getX(), chunkMinBlock.getZ()));
                 player.sendMessage(String.format("Chunk max block (%d, %d)", chunkMaxBlock.getX(), chunkMaxBlock.getZ()));
             }
             // create a chunk region at the chunk the player is in - doesn't create a parent region nor verify that the chunk is not claimed yet
-            case "create-test-chunk-region" -> {
+            case CREATE_TEST_CHUNK_REGION_SUBCOMMAND -> {
                 String testChunkRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
                 ProtectedRegion testChunkRegion = new ProtectedCuboidRegion(testChunkRegionName, min, max);
 
@@ -110,7 +113,7 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                 regionManager.addRegion(testChunkRegion);
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "Saved region to this world's region list");
             }
-            case "create-region-with-confirmation" -> {
+            case CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND -> {
                 String chunkRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
 
                 // Validate this is an unclaimed chunk
