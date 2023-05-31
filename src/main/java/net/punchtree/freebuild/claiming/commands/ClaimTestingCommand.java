@@ -3,6 +3,9 @@ package net.punchtree.freebuild.claiming.commands;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.protection.flags.IntegerFlag;
+import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
@@ -12,25 +15,58 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.punchtree.freebuild.PunchTreeFreebuildPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
-public class ClaimTestingCommand implements CommandExecutor {
+public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
+
+    /*
+     * For consistency, this file uses the following words the following ways
+     *  × Region - a worldguard region (the region that the worldguard plugin understands, used in any context)
+     *  × Chunk - a Minecraft chunk
+     *  × Chunk Region - a worldguard region matching the size and borders of a specific chunk
+     *  × Parent Region - a parent nonphysical region to which chunk claims are parented to form one area that one or more player owners control
+     *  × Claim - any area a player has marked as their own - this is a general domain language term the player knows
+     */
+
+    private static final List<String> SUBCOMMANDS = List.of("calc-chunk-index", "create-test-claim", "create-region-with-confirmation");
+
+    private static IntegerFlag NUMBER_OF_CLAIMS_FLAG;
 
     private final RegionContainer regionContainer;
 
+    public static void registerCustomWorldguardFlags() {
+        FlagRegistry flagRegistry = WorldGuard.getInstance().getFlagRegistry();
+        String NUMBER_OF_CLAIMS_FLAG_NAME = "number-of-claims";
+        try {
+            NUMBER_OF_CLAIMS_FLAG = new IntegerFlag(NUMBER_OF_CLAIMS_FLAG_NAME);
+            flagRegistry.register(NUMBER_OF_CLAIMS_FLAG);
+        } catch (FlagConflictException fce) {
+            Bukkit.getLogger().severe("Could not register our custom flag!");
+        } catch (IllegalStateException ise) {
+            // the plugin is being loaded after worldguard
+            NUMBER_OF_CLAIMS_FLAG = (IntegerFlag) flagRegistry.get(NUMBER_OF_CLAIMS_FLAG_NAME);
+        }
+    }
+
     public ClaimTestingCommand() {
         regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        return SUBCOMMANDS;
     }
 
     @Override
@@ -41,6 +77,8 @@ public class ClaimTestingCommand implements CommandExecutor {
         if (args.length < 1) {
             return false;
         }
+
+        UUID playersId = player.getUniqueId();
 
         Chunk chunk = player.getLocation().getChunk();
         Block chunkMinBlock = chunk.getBlock(0, player.getWorld().getMinHeight(), 0);
@@ -56,37 +94,38 @@ public class ClaimTestingCommand implements CommandExecutor {
         }
 
         switch (args[0]) {
+            // takes a given location (the player's location) and calculates the chunk index
             case "calc-chunk-index" -> {
                 player.sendMessage(String.format("Chunk (%d, %d)", chunk.getX(), chunk.getZ()));
                 player.sendMessage(String.format("Chunk min block (%d, %d)", chunkMinBlock.getX(), chunkMinBlock.getZ()));
                 player.sendMessage(String.format("Chunk max block (%d, %d)", chunkMaxBlock.getX(), chunkMaxBlock.getZ()));
             }
-            case "create-test-claim" -> {
-                String testClaimRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
-                ProtectedRegion testClaim = new ProtectedCuboidRegion(testClaimRegionName, min, max);
+            // create a chunk region at the chunk the player is in - doesn't create a parent region nor verify that the chunk is not claimed yet
+            case "create-test-chunk-region" -> {
+                String testChunkRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
+                ProtectedRegion testChunkRegion = new ProtectedCuboidRegion(testChunkRegionName, min, max);
 
-                player.sendMessage(ChatColor.LIGHT_PURPLE + "Created a region for " + testClaimRegionName);
+                player.sendMessage(ChatColor.LIGHT_PURPLE + "Created a region for " + testChunkRegionName);
 
-                regionManager.addRegion(testClaim);
+                regionManager.addRegion(testChunkRegion);
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "Saved region to this world's region list");
             }
             case "create-region-with-confirmation" -> {
-                String testClaimRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
-                String playersUUID = player.getUniqueId().toString();
+                String chunkRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
 
                 // Validate this is an unclaimed chunk
-                if (regionManager.hasRegion(testClaimRegionName)) {
+                if (regionManager.hasRegion(chunkRegionName)) {
                     player.sendMessage(ChatColor.RED + "You cannot claim this chunk as it is already claimed!");
                     return true;
                 }
 
-                // Check if it is adjacent to other claims that are mine (we'll deal with other folks claims later)
-                List<Direction> directionsWithAdjacentClaims =
+                // Check if it is adjacent to other chunk regions that are mine (we'll deal with other folks claims later)
+                List<Direction> directionsWithAdjacentChunkRegionsOwnedBySamePlayer =
                         Arrays.stream(Direction.values())
-                                .filter(direction -> hasAdjacentClaim(regionManager, playersUUID, chunk, direction))
-                                .collect(Collectors.toList());
+                                .filter(direction -> hasAdjacentChunkRegionOwnedByPlayer(regionManager, playersId, chunk, direction))
+                                .toList();
 
-                if (directionsWithAdjacentClaims.size() == 0) {
+                if (directionsWithAdjacentChunkRegionsOwnedBySamePlayer.size() == 0) {
                     // This is establishing a new region!!!!
                     if (!isConfirmed(args, player)) {
                         sendConfirmationPrompt(player);
@@ -94,34 +133,35 @@ public class ClaimTestingCommand implements CommandExecutor {
                     }
 
                     int personalRegionIndex = 1;
-                    while (regionManager.hasRegion(String.format("%s-%d", playersUUID, personalRegionIndex))) {
+                    while (regionManager.hasRegion(String.format("%s-%d", playersId, personalRegionIndex))) {
                         ++personalRegionIndex;
                     }
-                    String newRegionName = String.format("%s-%d", playersUUID, personalRegionIndex);
-                    ProtectedRegion region = new GlobalProtectedRegion(newRegionName);
+                    String newRegionName = String.format("%s-%d", playersId, personalRegionIndex);
+                    ProtectedRegion newParentRegion = new GlobalProtectedRegion(newRegionName);
 
-                    ProtectedRegion testClaim = new ProtectedCuboidRegion(testClaimRegionName, min, max);
-
+                    ProtectedRegion newChunkRegion = new ProtectedCuboidRegion(chunkRegionName, min, max);
 
                     try {
-                        testClaim.setParent(region);
+                        newChunkRegion.setParent(newParentRegion);
                     } catch (ProtectedRegion.CircularInheritanceException e) {
                         // This should never actually be thrown since we're only parenting one freshly created region to another
                         throw new RuntimeException(e);
                     }
 
-                    regionManager.addRegion(testClaim);
-                    regionManager.addRegion(region);
+                    newParentRegion.setFlag(NUMBER_OF_CLAIMS_FLAG, 1);
+
+                    regionManager.addRegion(newChunkRegion);
+                    regionManager.addRegion(newParentRegion);
 
                     player.sendMessage(ChatColor.AQUA + "Established a new region under your name!");
                     player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Parent region: " + newRegionName);
-                    player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Chunk region: " + testClaimRegionName);
+                    player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Chunk region: " + chunkRegionName);
                 } else {
                     // We are appending to an existing region!
                     String regionName ;
                     for (Direction direction : Direction.values()) {
-                        if (directionsWithAdjacentClaims.contains(direction)) {
-                            ProtectedRegion adjacentRegion = getAdjacentRegion(regionManager, chunk, direction);
+                        if (directionsWithAdjacentChunkRegionsOwnedBySamePlayer.contains(direction)) {
+                            ProtectedRegion adjacentChunkRegion = getAdjacentChunkRegion(regionManager, chunk, direction);
                         } else {
 
                         }
@@ -138,7 +178,7 @@ public class ClaimTestingCommand implements CommandExecutor {
         return true;
     }
 
-    private ProtectedRegion getAdjacentRegion(RegionManager regionManager, Chunk chunk, Direction direction) {
+    private ProtectedRegion getAdjacentChunkRegion(RegionManager regionManager, Chunk chunk, Direction direction) {
         String chunkRegionName = String.format("claim_%d_%d", chunk.getX() + direction.x, chunk.getZ() + direction.z);
 
         ProtectedRegion chunkRegion = regionManager.getRegion(chunkRegionName);
@@ -153,9 +193,9 @@ public class ClaimTestingCommand implements CommandExecutor {
      * @param direction
      * @return if the player with the given uuid has claimed the chunk adjacent to the passed in chunk in the given direction
      */
-    private boolean hasAdjacentClaim(RegionManager regionManager, String playersUUID, Chunk chunk, Direction direction) {
-        ProtectedRegion playersRegion = getAdjacentRegion(regionManager, chunk, direction);
-        return playersRegion != null && playersRegion.getId().startsWith(playersUUID);
+    private boolean hasAdjacentChunkRegionOwnedByPlayer(RegionManager regionManager, UUID playersUUID, Chunk chunk, Direction direction) {
+        ProtectedRegion playersRegion = getAdjacentChunkRegion(regionManager, chunk, direction);
+        return playersRegion != null && playersRegion.getId().startsWith(playersUUID.toString());
     }
 
     private enum Direction { NORTH(0,-1), EAST(1,0), SOUTH(0,1), WEST(-1,0);
