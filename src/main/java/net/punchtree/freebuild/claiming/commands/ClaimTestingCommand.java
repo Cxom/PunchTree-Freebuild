@@ -7,6 +7,7 @@ import com.sk89q.worldguard.protection.flags.IntegerFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.managers.storage.StorageException;
 import com.sk89q.worldguard.protection.regions.GlobalProtectedRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
@@ -43,7 +44,8 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
     public static final String CALC_CHUNK_INDEX_SUBCOMMAND = "calc-chunk-index";
     public static final String CREATE_TEST_CHUNK_REGION_SUBCOMMAND = "create-test-chunk-region";
     public static final String CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND = "create-region-with-confirmation";
-    private static final List<String> SUBCOMMANDS = List.of(CALC_CHUNK_INDEX_SUBCOMMAND, CREATE_TEST_CHUNK_REGION_SUBCOMMAND, CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND);
+    public static final String UNCLAIM_CHUNK_SUBCOMMAND = "unclaim-chunk";
+    private static final List<String> SUBCOMMANDS = List.of(CALC_CHUNK_INDEX_SUBCOMMAND, CREATE_TEST_CHUNK_REGION_SUBCOMMAND, CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND, UNCLAIM_CHUNK_SUBCOMMAND);
 
     private static IntegerFlag NUMBER_OF_CLAIMS_FLAG;
 
@@ -193,7 +195,46 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
 //            return true;
 
             }
+            case UNCLAIM_CHUNK_SUBCOMMAND -> {
+                String chunkRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
+
+                ProtectedRegion chunkRegion = regionManager.getRegion(chunkRegionName);
+                if (chunkRegion == null) {
+                    player.sendMessage(ChatColor.RED + "You cannot unclaim this chunk as it is not claimed!");
+                    return true;
+                }
+
+                ProtectedRegion parentRegion = chunkRegion.getParent();
+                if (parentRegion == null) {
+                    // This shouldn't happen, but should fail gracefully/quietly if it does
+                    player.sendMessage(ChatColor.RED + "You cannot unclaim this chunk (something is wrong with it!)!");
+                    return true;
+                }
+
+                // TODO this should check co-ownership/permission to unclaim properly, instead of just the parent region name
+                if (!parentRegion.getId().startsWith(claimingPlayersId.toString())) {
+                    player.sendMessage(ChatColor.RED + "You cannot unclaim this chunk as it does not belong to you!");
+                    return true;
+                }
+
+                int numberOfClaimsInParentRegionBefore = parentRegion.getFlag(NUMBER_OF_CLAIMS_FLAG);
+                // TODO right now we're asserting that the number of claims in the adjacent region is always set, and set correctly
+                if (numberOfClaimsInParentRegionBefore > 1) {
+                    // TODO require confirmation
+                    int numberOfClaimsInParentRegionAfter = numberOfClaimsInParentRegionBefore - 1;
+                    parentRegion.setFlag(NUMBER_OF_CLAIMS_FLAG, numberOfClaimsInParentRegionAfter);
+
+                    regionManager.removeRegion(chunkRegionName);
+                }
+
+            }
             default -> player.sendMessage(ChatColor.RED + "Subcommand not recognized");
+        }
+
+        try {
+            regionManager.saveChanges();
+        } catch (StorageException e) {
+            e.printStackTrace();
         }
 
         return true;
