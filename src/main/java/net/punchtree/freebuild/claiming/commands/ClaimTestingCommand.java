@@ -42,6 +42,8 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
      *  × Claim - any area a player has marked as their own - this is a general domain language term the player knows
      */
 
+    // TODO idea - the CREATOR of a region is a superowner - they cannot be removed as an owner - they can only TRANSFER the region to another player, which returns them an anchor credit and takes an anchor credit from the other player
+
     public static final String CALC_CHUNK_INDEX_SUBCOMMAND = "calc-chunk-index";
     public static final String CREATE_TEST_CHUNK_REGION_SUBCOMMAND = "create-test-chunk-region";
     public static final String CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND = "create-region-with-confirmation";
@@ -55,22 +57,22 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
             INDICATE_SUBCOMMAND
     );
 
-    private static IntegerFlag NUMBER_OF_CLAIMS_FLAG;
+    private static IntegerFlag NUMBER_OF_CHUNKS_FLAG;
 
     private final RegionContainer regionContainer;
     private final ClaimTestingRegionIndicator claimTestingRegionIndicator;
 
     public static void registerCustomWorldguardFlags() {
         FlagRegistry flagRegistry = WorldGuard.getInstance().getFlagRegistry();
-        final String NUMBER_OF_CLAIMS_FLAG_NAME = "number-of-claims";
+        final String NUMBER_OF_CHUNKS_FLAG_NAME = "number-of-chunks";
         try {
-            NUMBER_OF_CLAIMS_FLAG = new IntegerFlag(NUMBER_OF_CLAIMS_FLAG_NAME);
-            flagRegistry.register(NUMBER_OF_CLAIMS_FLAG);
+            NUMBER_OF_CHUNKS_FLAG = new IntegerFlag(NUMBER_OF_CHUNKS_FLAG_NAME);
+            flagRegistry.register(NUMBER_OF_CHUNKS_FLAG);
         } catch (FlagConflictException fce) {
             Bukkit.getLogger().severe("Could not register our custom flag!");
         } catch (IllegalStateException ise) {
             // the plugin is being loaded after worldguard
-            NUMBER_OF_CLAIMS_FLAG = (IntegerFlag) flagRegistry.get(NUMBER_OF_CLAIMS_FLAG_NAME);
+            NUMBER_OF_CHUNKS_FLAG = (IntegerFlag) flagRegistry.get(NUMBER_OF_CHUNKS_FLAG_NAME);
         }
     }
 
@@ -141,6 +143,7 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     // This is establishing a new region!!!!
                     if (!isConfirmed(args, player)) {
                         sendConfirmationPrompt(player,
+                                CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND,
                                 "claim this chunk - doing so will consume one of your allocated regions.",
                                 "establish a region beginning with this chunk.",
                                 "that you want to claim this chunk"
@@ -158,7 +161,7 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                         throw new AssertionError(e);
                     }
 
-                    newParentRegion.setFlag(NUMBER_OF_CLAIMS_FLAG, 1);
+                    newParentRegion.setFlag(NUMBER_OF_CHUNKS_FLAG, 1);
 
                     regionManager.addRegion(newChunkRegion);
                     regionManager.addRegion(newParentRegion);
@@ -177,22 +180,25 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
 
                     Direction firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerDirection = directionsWithAdjacentChunkRegionsAlsoOwnedByClaimingPlayer.get(0);
                     ProtectedRegion firstAdjacentChunkRegionAlsoOwnedByClaimingPlayer = getAdjacentChunkRegion(regionManager, chunk, firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerDirection);
-                    ProtectedRegion firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion = firstAdjacentChunkRegionAlsoOwnedByClaimingPlayer.getParent();
+                    ProtectedRegion parentRegion = firstAdjacentChunkRegionAlsoOwnedByClaimingPlayer.getParent();
 
                     ProtectedRegion newChunkRegion = createChunkRegion(chunk);
                     try {
-                        newChunkRegion.setParent(firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion);
+                        newChunkRegion.setParent(parentRegion);
                     } catch (ProtectedRegion.CircularInheritanceException e) {
                         // This should never actually be thrown since we're only parenting a freshly created region to an existing region
                         throw new AssertionError(e);
                     }
 
-                    int numberOfClaimsInAdjacentRegionBefore = firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion.getFlag(NUMBER_OF_CLAIMS_FLAG);
+                    int numberOfChunksInParentRegionBefore = parentRegion.getFlag(NUMBER_OF_CHUNKS_FLAG);
                     // TODO right now we're asserting that the number of claims in the adjacent region is always set, and set correctly
                     // Ideally, we'd have some sort of region verification/error correction procedure that can be run whenever a flag
                     // that is expected is not actually there, or otherwise appears to be incorrect/invalid
-                    int numberOfClaimsInAdjacentRegionAfter = numberOfClaimsInAdjacentRegionBefore + 1;
-                    firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion.setFlag(NUMBER_OF_CLAIMS_FLAG, numberOfClaimsInAdjacentRegionAfter);
+                    int numberOfChunksInParentRegionAfter = numberOfChunksInParentRegionBefore + 1;
+                    parentRegion.setFlag(NUMBER_OF_CHUNKS_FLAG, numberOfChunksInParentRegionAfter);
+
+                    player.sendMessage(ChatColor.AQUA + "Claimed a chunk and added it to existing region '" + parentRegion.getId() + "'");
+                    player.sendMessage(ChatColor.AQUA + "The region now has " + numberOfChunksInParentRegionAfter + " chunks in it.");
 
                     // TODO case 2 and 3
                 }
@@ -202,9 +208,7 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
 
             }
             case UNCLAIM_CHUNK_SUBCOMMAND -> {
-                String chunkRegionName = getChunkRegionName(chunk);
-
-                ProtectedRegion chunkRegion = regionManager.getRegion(chunkRegionName);
+                ProtectedRegion chunkRegion = regionManager.getRegion(getChunkRegionName(chunk));
                 if (chunkRegion == null) {
                     player.sendMessage(ChatColor.RED + "You cannot unclaim this chunk as it is not claimed!");
                     return true;
@@ -225,6 +229,7 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
 
                 if (!isConfirmed(args, player)) {
                     sendConfirmationPrompt(player,
+                            UNCLAIM_CHUNK_SUBCOMMAND,
                             "unclaim this chunk - doing so will mean it is no longer protected.",
                             "unclaim this chunk.",
                             "that you want to unclaim this chunk"
@@ -232,22 +237,36 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
 
-                int numberOfClaimsInParentRegionBefore = parentRegion.getFlag(NUMBER_OF_CLAIMS_FLAG);
+                int numberOfChunksInParentRegionBefore = parentRegion.getFlag(NUMBER_OF_CHUNKS_FLAG);
                 // TODO right now we're asserting that the number of claims in the adjacent region is always set, and set correctly
-                if (numberOfClaimsInParentRegionBefore > 1) {
-                    int numberOfClaimsInParentRegionAfter = numberOfClaimsInParentRegionBefore - 1;
-                    parentRegion.setFlag(NUMBER_OF_CLAIMS_FLAG, numberOfClaimsInParentRegionAfter);
+                if (numberOfChunksInParentRegionBefore > 1) {
+                    int numberOfChunksInParentRegionAfter = numberOfChunksInParentRegionBefore - 1;
+                    parentRegion.setFlag(NUMBER_OF_CHUNKS_FLAG, numberOfChunksInParentRegionAfter);
 
-                    regionManager.removeRegion(chunkRegionName);
+                    regionManager.removeRegion(chunkRegion.getId());
+
+                    player.sendMessage(ChatColor.AQUA + "Unclaimed a chunk in the region '" + parentRegion.getId() + "'");
+                    player.sendMessage(ChatColor.AQUA + "The region now has " + numberOfChunksInParentRegionAfter + " chunks in it.");
                 } else {
                     // TODO unclaim a parent region - issue a warning and require a DOUBLE confirmation
-                }
+                    if (!isDoubleConfirmedForParentRegionDeletion(args, player)) {
+                        sendDoubleConfirmationForParentRegionDeletionPrompt(player);
+                        return true;
+                    }
 
+                    regionManager.removeRegion(chunkRegion.getId());
+                    regionManager.removeRegion(parentRegion.getId());
+
+                    player.sendMessage(ChatColor.AQUA + "Unclaimed the last chunk in and deleted the region '" + parentRegion.getId() + "'!!");
+                }
             }
             case INDICATE_SUBCOMMAND -> {
                 claimTestingRegionIndicator.toggle(player);
             }
-            default -> player.sendMessage(ChatColor.RED + "Subcommand not recognized");
+            default -> {
+                player.sendMessage(ChatColor.RED + "Subcommand not recognized");
+                return true;
+            }
         }
 
         try {
@@ -300,8 +319,8 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
      * @return if the player with the given uuid has claimed the chunk adjacent to the passed in chunk in the given direction
      */
     private boolean hasAdjacentChunkRegionOwnedByPlayer(RegionManager regionManager, UUID playersUUID, Chunk chunk, Direction direction) {
-        ProtectedRegion playersRegion = getAdjacentChunkRegion(regionManager, chunk, direction);
-        return playersRegion != null && playersRegion.getId().startsWith(playersUUID.toString());
+        ProtectedRegion adjacentChunkRegion = getAdjacentChunkRegion(regionManager, chunk, direction);
+        return adjacentChunkRegion != null && adjacentChunkRegion.getId().startsWith(playersUUID.toString());
     }
 
     private enum Direction { NORTH(0,-1), EAST(1,0), SOUTH(0,1), WEST(-1,0);
@@ -313,14 +332,14 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private void sendConfirmationPrompt(Player player, String promptAreYouSureYouWantTo, String promptClickConfirmToContinueAnd, String buttonHoverTooltipClickHereToConfirm) {
+    private void sendConfirmationPrompt(Player player, String subcommand, String promptAreYouSureYouWantTo, String promptClickConfirmToContinueAnd, String buttonHoverTooltipClickHereToConfirm) {
         Component confirmationMessage1 = Component.text("Are you sure you want to " + promptAreYouSureYouWantTo).color(NamedTextColor.RED);
         Component confirmButton = Component
                 .text("CONFIRM")
                 .color(NamedTextColor.RED)
                 .decorate(TextDecoration.BOLD)
                 .hoverEvent(Component.text("Click here to confirm " + buttonHoverTooltipClickHereToConfirm).asHoverEvent())
-                .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/claimtest create-region-with-confirmation confirm " + player.getName()));
+                .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/claimtest " + subcommand + " confirm " + player.getName()));
         Component confirmationMessage2 = Component
                 .text("Click ").color(NamedTextColor.RED)
                 .append(confirmButton)
@@ -330,7 +349,32 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean isConfirmed(String[] args, Player player) {
-        return args.length > 2 && args[1].equalsIgnoreCase("confirm") && args[2].equalsIgnoreCase(player.getName());
+        return args.length >= 3 && args[1].equalsIgnoreCase("confirm") && args[2].equalsIgnoreCase(player.getName());
+    }
+
+    private void sendDoubleConfirmationForParentRegionDeletionPrompt(Player player) {
+        Component confirmationMessage1part1 = Component.text("Are you ").color(NamedTextColor.RED);
+        Component confirmationMessage2part2 = Component.text("absolutely").color(NamedTextColor.RED).decorate(TextDecoration.ITALIC);
+        Component confirmationMessage3part3 = Component.text(" sure you want to unclaim this chunk?").color(NamedTextColor.RED);
+        Component confirmationMessage1 = confirmationMessage1part1.append(confirmationMessage2part2).append(confirmationMessage3part3);
+        Component explanationMessage = Component.text("As this is the last chunk in your region, the region itself, including all owner, member, and flag information will be deleted if you unclaim this chunk!").color(NamedTextColor.RED);
+        Component confirmButton = Component
+                .text("I'M SURE")
+                .color(NamedTextColor.RED)
+                .decorate(TextDecoration.BOLD)
+                .hoverEvent(Component.text("Click here to confirm you wish to unclaim this chunk and delete this region").asHoverEvent())
+                .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/claimtest " + UNCLAIM_CHUNK_SUBCOMMAND + " confirm " + player.getName() + " imsure " + player.getName()));
+        Component confirmationMessage2 = Component
+                .text("Click ").color(NamedTextColor.RED)
+                .append(confirmButton)
+                .append(Component.text(" to continue and unclaim this last chunk and delete your region").color(NamedTextColor.RED));
+        player.sendMessage(confirmationMessage1);
+        player.sendMessage(explanationMessage);
+        player.sendMessage(confirmationMessage2);
+    }
+
+    private boolean isDoubleConfirmedForParentRegionDeletion(String[] args, Player player) {
+        return isConfirmed(args, player) && args.length >= 5 && args[3].equalsIgnoreCase("imsure") && args[4].equalsIgnoreCase(player.getName());
     }
 
 }
