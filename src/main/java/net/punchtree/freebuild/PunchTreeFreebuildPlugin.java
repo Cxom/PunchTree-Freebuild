@@ -14,6 +14,7 @@ import net.punchtree.freebuild.billiards.BilliardsManager;
 import net.punchtree.freebuild.billiards.BilliardsShootListener;
 import net.punchtree.freebuild.bossfight.WitherFightManager;
 import net.punchtree.freebuild.claiming.commands.ClaimTestingCommand;
+import net.punchtree.freebuild.claiming.commands.ClaimTestingRegionIndicator;
 import net.punchtree.freebuild.commands.AdvancementsCommand;
 import net.punchtree.freebuild.commands.BlocksCommand;
 import net.punchtree.freebuild.datahandling.DatabaseConnection;
@@ -44,6 +45,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
     private TowerDefensePlayerManager towerDefensePlayerManager;
     private WitherFightManager witherFightManager;
     private SlideManager slideManager;
+    private ClaimTestingRegionIndicator claimTestingRegionIndicator;
 
     public static PunchTreeFreebuildPlugin getInstance() {
         return instance;
@@ -91,13 +93,13 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
         registerEvents();
 
+        initializeClaimTesting();
         initializeTowerDefense();
     }
 
     private void setCommandExecutors() {
         getCommand("blocks").setExecutor(blocksCommand);
         getCommand("vskip").setExecutor(ambientVoteCommand);
-        getCommand("claimtest").setExecutor(new ClaimTestingCommand());
         getCommand("billiards").setExecutor(new BilliardsCommand(billiardsManager));
         getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
         getCommand("afk").setExecutor(new AfkCommand());
@@ -123,6 +125,12 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new ArborOnPlayerLeave(), this);
         Bukkit.getPluginManager().registerEvents(new PtfbPlayerOnPlayerJoin(), this);
         Bukkit.getPluginManager().registerEvents(new PtfbPlayerOnPlayerQuit(), this);
+    }
+
+    private void initializeClaimTesting() {
+        claimTestingRegionIndicator = new ClaimTestingRegionIndicator();
+        Bukkit.getPluginManager().registerEvents(claimTestingRegionIndicator, this);
+        getCommand("claimtest").setExecutor(new ClaimTestingCommand(claimTestingRegionIndicator));
     }
 
     private void initializeTowerDefense() {

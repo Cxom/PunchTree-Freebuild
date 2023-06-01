@@ -45,15 +45,23 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
     public static final String CREATE_TEST_CHUNK_REGION_SUBCOMMAND = "create-test-chunk-region";
     public static final String CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND = "create-region-with-confirmation";
     public static final String UNCLAIM_CHUNK_SUBCOMMAND = "unclaim-chunk";
-    private static final List<String> SUBCOMMANDS = List.of(CALC_CHUNK_INDEX_SUBCOMMAND, CREATE_TEST_CHUNK_REGION_SUBCOMMAND, CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND, UNCLAIM_CHUNK_SUBCOMMAND);
+    public static final String INDICATE_SUBCOMMAND = "indicate";
+    private static final List<String> SUBCOMMANDS = List.of(
+            CALC_CHUNK_INDEX_SUBCOMMAND,
+            CREATE_TEST_CHUNK_REGION_SUBCOMMAND,
+            CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND,
+            UNCLAIM_CHUNK_SUBCOMMAND,
+            INDICATE_SUBCOMMAND
+    );
 
     private static IntegerFlag NUMBER_OF_CLAIMS_FLAG;
 
     private final RegionContainer regionContainer;
+    private final ClaimTestingRegionIndicator claimTestingRegionIndicator;
 
     public static void registerCustomWorldguardFlags() {
         FlagRegistry flagRegistry = WorldGuard.getInstance().getFlagRegistry();
-        String NUMBER_OF_CLAIMS_FLAG_NAME = "number-of-claims";
+        final String NUMBER_OF_CLAIMS_FLAG_NAME = "number-of-claims";
         try {
             NUMBER_OF_CLAIMS_FLAG = new IntegerFlag(NUMBER_OF_CLAIMS_FLAG_NAME);
             flagRegistry.register(NUMBER_OF_CLAIMS_FLAG);
@@ -65,7 +73,8 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    public ClaimTestingCommand() {
+    public ClaimTestingCommand(ClaimTestingRegionIndicator claimTestingRegionIndicator) {
+        this.claimTestingRegionIndicator = claimTestingRegionIndicator;
         regionContainer = WorldGuard.getInstance().getPlatform().getRegionContainer();
     }
 
@@ -141,6 +150,7 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     while (regionManager.hasRegion(String.format("%s-%d", claimingPlayersId, personalRegionIndex))) {
                         ++personalRegionIndex;
                     }
+                    // TODO is this guaranteed to be the only hyphen? It's probably more useful to be able to know it's a unique character in the string. This should also be isolated logic in its own util logic for region management/claiming
                     String newRegionName = String.format("%s-%d", claimingPlayersId, personalRegionIndex);
                     ProtectedRegion newParentRegion = new GlobalProtectedRegion(newRegionName);
 
@@ -227,6 +237,9 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     regionManager.removeRegion(chunkRegionName);
                 }
 
+            }
+            case INDICATE_SUBCOMMAND -> {
+                claimTestingRegionIndicator.toggle(player);
             }
             default -> player.sendMessage(ChatColor.RED + "Subcommand not recognized");
         }
