@@ -6,9 +6,6 @@ import net.punchtree.freebuild.afk.RosterManager;
 import net.punchtree.freebuild.ambientvoting.AmbientVoteCommand;
 import net.punchtree.freebuild.ambientvoting.NightTimeRunnable;
 import net.punchtree.freebuild.arbor.Arbor;
-import net.punchtree.freebuild.arbor.ArborOnAsyncChat;
-import net.punchtree.freebuild.arbor.ArborOnPlayerJoin;
-import net.punchtree.freebuild.arbor.ArborOnPlayerLeave;
 import net.punchtree.freebuild.billiards.BilliardsCommand;
 import net.punchtree.freebuild.billiards.BilliardsManager;
 import net.punchtree.freebuild.billiards.BilliardsShootListener;
@@ -87,7 +84,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
 
         ioDispatcher = new IODispatcher();
         configConnection = new YamlDatabaseConnection("config.yml");
-        loadConfig();
+//        loadConfig();
 
         setCommandExecutors();
 
@@ -120,9 +117,9 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new PlayingCardInteractListener(), this);
         Bukkit.getPluginManager().registerEvents(new NetherPortalListener(), this);
 //        Bukkit.getPluginManager().registerEvents(witherFightManager, this);
-        Bukkit.getPluginManager().registerEvents(new ArborOnAsyncChat(), this);
-        Bukkit.getPluginManager().registerEvents(new ArborOnPlayerJoin(), this);
-        Bukkit.getPluginManager().registerEvents(new ArborOnPlayerLeave(), this);
+//        Bukkit.getPluginManager().registerEvents(new ArborOnAsyncChat(), this);
+//        Bukkit.getPluginManager().registerEvents(new ArborOnPlayerJoin(), this);
+//        Bukkit.getPluginManager().registerEvents(new ArborOnPlayerLeave(), this);
         Bukkit.getPluginManager().registerEvents(new PtfbPlayerOnPlayerJoin(), this);
         Bukkit.getPluginManager().registerEvents(new PtfbPlayerOnPlayerQuit(), this);
     }
@@ -160,7 +157,7 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         RosterManager.getRoster("afk").wipeRoster();
 //        witherFightManager.onDisable();
         slideManager.onDisable();
-        arbor.stop();
+//        arbor.stop();
         ioDispatcher.shutdown();
     }
 
