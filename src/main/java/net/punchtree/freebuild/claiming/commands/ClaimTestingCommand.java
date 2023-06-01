@@ -25,6 +25,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -95,10 +96,6 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
         UUID claimingPlayersId = player.getUniqueId();
 
         Chunk chunk = player.getLocation().getChunk();
-        Block chunkMinBlock = chunk.getBlock(0, player.getWorld().getMinHeight(), 0);
-        Block chunkMaxBlock = chunk.getBlock(15, player.getWorld().getMaxHeight(), 15);
-        BlockVector3 min = BukkitAdapter.asBlockVector(chunkMinBlock.getLocation());
-        BlockVector3 max = BukkitAdapter.asBlockVector(chunkMaxBlock.getLocation());
 
         RegionManager regionManager = regionContainer.get(BukkitAdapter.adapt(chunk.getWorld()));
 
@@ -110,22 +107,23 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
         switch (args[0]) {
             // takes a given location (the player's location) and calculates the chunk index
             case CALC_CHUNK_INDEX_SUBCOMMAND -> {
+                Block chunkMinBlock = chunk.getBlock(0, player.getWorld().getMinHeight(), 0);
+                Block chunkMaxBlock = chunk.getBlock(15, player.getWorld().getMaxHeight(), 15);
                 player.sendMessage(String.format("Chunk (%d, %d)", chunk.getX(), chunk.getZ()));
                 player.sendMessage(String.format("Chunk min block (%d, %d)", chunkMinBlock.getX(), chunkMinBlock.getZ()));
                 player.sendMessage(String.format("Chunk max block (%d, %d)", chunkMaxBlock.getX(), chunkMaxBlock.getZ()));
             }
             // create a chunk region at the chunk the player is in - doesn't create a parent region nor verify that the chunk is not claimed yet
             case CREATE_TEST_CHUNK_REGION_SUBCOMMAND -> {
-                String testChunkRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
-                ProtectedRegion testChunkRegion = new ProtectedCuboidRegion(testChunkRegionName, min, max);
+                ProtectedRegion testChunkRegion = createChunkRegion(chunk);
 
-                player.sendMessage(ChatColor.LIGHT_PURPLE + "Created a region for " + testChunkRegionName);
+                player.sendMessage(ChatColor.LIGHT_PURPLE + "Created a region for " + testChunkRegion.getId());
 
                 regionManager.addRegion(testChunkRegion);
                 player.sendMessage(ChatColor.LIGHT_PURPLE + "Saved region to this world's region list");
             }
             case CREATE_REGION_WITH_CONFIRMATION_SUBCOMMAND -> {
-                String chunkRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
+                String chunkRegionName = getChunkRegionName(chunk);
 
                 // Validate this is an unclaimed chunk
                 if (regionManager.hasRegion(chunkRegionName)) {
@@ -142,19 +140,17 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                 if (directionsWithAdjacentChunkRegionsAlsoOwnedByClaimingPlayer.isEmpty()) {
                     // This is establishing a new region!!!!
                     if (!isConfirmed(args, player)) {
-                        sendConfirmationPrompt(player);
+                        sendConfirmationPrompt(player,
+                                "claim this chunk - doing so will consume one of your allocated regions.",
+                                "establish a region beginning with this chunk.",
+                                "that you want to claim this chunk"
+                                );
                         return true;
                     }
 
-                    int personalRegionIndex = 1;
-                    while (regionManager.hasRegion(String.format("%s-%d", claimingPlayersId, personalRegionIndex))) {
-                        ++personalRegionIndex;
-                    }
-                    // TODO is this guaranteed to be the only hyphen? It's probably more useful to be able to know it's a unique character in the string. This should also be isolated logic in its own util logic for region management/claiming
-                    String newRegionName = String.format("%s-%d", claimingPlayersId, personalRegionIndex);
-                    ProtectedRegion newParentRegion = new GlobalProtectedRegion(newRegionName);
+                    ProtectedRegion newParentRegion = createParentRegion(claimingPlayersId, regionManager);
 
-                    ProtectedRegion newChunkRegion = new ProtectedCuboidRegion(chunkRegionName, min, max);
+                    ProtectedRegion newChunkRegion = createChunkRegion(chunk);
                     try {
                         newChunkRegion.setParent(newParentRegion);
                     } catch (ProtectedRegion.CircularInheritanceException e) {
@@ -168,8 +164,8 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     regionManager.addRegion(newParentRegion);
 
                     player.sendMessage(ChatColor.AQUA + "Established a new region under your name!");
-                    player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Parent region: " + newRegionName);
-                    player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Chunk region: " + chunkRegionName);
+                    player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Parent region: " + newParentRegion.getId());
+                    player.sendMessage(ChatColor.LIGHT_PURPLE + "Debug: Chunk region: " + newChunkRegion.getId());
                 } else {
                     // We are appending to an existing region!
                     // There are three things we can find
@@ -183,7 +179,7 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     ProtectedRegion firstAdjacentChunkRegionAlsoOwnedByClaimingPlayer = getAdjacentChunkRegion(regionManager, chunk, firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerDirection);
                     ProtectedRegion firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion = firstAdjacentChunkRegionAlsoOwnedByClaimingPlayer.getParent();
 
-                    ProtectedRegion newChunkRegion = new ProtectedCuboidRegion(chunkRegionName, min, max);
+                    ProtectedRegion newChunkRegion = createChunkRegion(chunk);
                     try {
                         newChunkRegion.setParent(firstAdjacentChunkRegionAlsoOwnedByClaimingPlayerParentRegion);
                     } catch (ProtectedRegion.CircularInheritanceException e) {
@@ -206,7 +202,7 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
 
             }
             case UNCLAIM_CHUNK_SUBCOMMAND -> {
-                String chunkRegionName = String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
+                String chunkRegionName = getChunkRegionName(chunk);
 
                 ProtectedRegion chunkRegion = regionManager.getRegion(chunkRegionName);
                 if (chunkRegion == null) {
@@ -227,14 +223,24 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
 
+                if (!isConfirmed(args, player)) {
+                    sendConfirmationPrompt(player,
+                            "unclaim this chunk - doing so will mean it is no longer protected.",
+                            "unclaim this chunk.",
+                            "that you want to unclaim this chunk"
+                    );
+                    return true;
+                }
+
                 int numberOfClaimsInParentRegionBefore = parentRegion.getFlag(NUMBER_OF_CLAIMS_FLAG);
                 // TODO right now we're asserting that the number of claims in the adjacent region is always set, and set correctly
                 if (numberOfClaimsInParentRegionBefore > 1) {
-                    // TODO require confirmation
                     int numberOfClaimsInParentRegionAfter = numberOfClaimsInParentRegionBefore - 1;
                     parentRegion.setFlag(NUMBER_OF_CLAIMS_FLAG, numberOfClaimsInParentRegionAfter);
 
                     regionManager.removeRegion(chunkRegionName);
+                } else {
+                    // TODO unclaim a parent region - issue a warning and require a DOUBLE confirmation
                 }
 
             }
@@ -251,6 +257,31 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
         }
 
         return true;
+    }
+
+    @NotNull
+    private ProtectedRegion createParentRegion(UUID claimingPlayersId, RegionManager regionManager) {
+        int personalRegionIndex = 1;
+        while (regionManager.hasRegion(String.format("%s-%d", claimingPlayersId, personalRegionIndex))) {
+            ++personalRegionIndex;
+        }
+        // TODO is this guaranteed to be the only hyphen? It's probably more useful to be able to know it's a unique character in the string. This should also be isolated logic in its own util logic for region management/claiming
+        String newParentRegionName = String.format("%s-%d", claimingPlayersId, personalRegionIndex);
+        ProtectedRegion newParentRegion = new GlobalProtectedRegion(newParentRegionName);
+        return newParentRegion;
+    }
+
+    private ProtectedCuboidRegion createChunkRegion(Chunk chunk) {
+        String chunkRegionName = getChunkRegionName(chunk);
+        Block chunkMinBlock = chunk.getBlock(0, chunk.getWorld().getMinHeight(), 0);
+        Block chunkMaxBlock = chunk.getBlock(15, chunk.getWorld().getMaxHeight(), 15);
+        BlockVector3 min = BukkitAdapter.asBlockVector(chunkMinBlock.getLocation());
+        BlockVector3 max = BukkitAdapter.asBlockVector(chunkMaxBlock.getLocation());
+        return new ProtectedCuboidRegion(chunkRegionName, min, max);
+    }
+
+    private String getChunkRegionName(Chunk chunk) {
+        return String.format("claim_%d_%d", chunk.getX(), chunk.getZ());
     }
 
     private ProtectedRegion getAdjacentChunkRegion(RegionManager regionManager, Chunk chunk, Direction direction) {
@@ -282,18 +313,18 @@ public class ClaimTestingCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private void sendConfirmationPrompt(Player player) {
-        Component confirmationMessage1 = Component.text("Are you sure you want to claim this chunk - doing so will consume one of your allocated regions.").color(NamedTextColor.RED);
+    private void sendConfirmationPrompt(Player player, String promptAreYouSureYouWantTo, String promptClickConfirmToContinueAnd, String buttonHoverTooltipClickHereToConfirm) {
+        Component confirmationMessage1 = Component.text("Are you sure you want to " + promptAreYouSureYouWantTo).color(NamedTextColor.RED);
         Component confirmButton = Component
                 .text("CONFIRM")
                 .color(NamedTextColor.RED)
                 .decorate(TextDecoration.BOLD)
-                .hoverEvent(Component.text("Click here to confirm that you want to claim this plot").asHoverEvent())
+                .hoverEvent(Component.text("Click here to confirm " + buttonHoverTooltipClickHereToConfirm).asHoverEvent())
                 .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/claimtest create-region-with-confirmation confirm " + player.getName()));
         Component confirmationMessage2 = Component
                 .text("Click ").color(NamedTextColor.RED)
                 .append(confirmButton)
-                .append(Component.text(" to continue and establish a region beginning with this chunk.").color(NamedTextColor.RED));
+                .append(Component.text(" to continue and " + promptClickConfirmToContinueAnd).color(NamedTextColor.RED));
         player.sendMessage(confirmationMessage1);
         player.sendMessage(confirmationMessage2);
     }
