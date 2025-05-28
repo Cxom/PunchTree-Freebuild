@@ -31,11 +31,6 @@ commands:
     usage: /towerdefense <subcommand>
     permission: ptfb.in-progress-testing
     aliases: [td]
-  playingcards:
-    description: A catchall command for playing cards stuff
-    usage: /playingcards <subcommand>
-    permission: ptfb.in-progress-testing
-    aliases: [pc]
   afk:
     description: Tell other player's you're going away from the keyboard.
     usage: /afk <optional user>

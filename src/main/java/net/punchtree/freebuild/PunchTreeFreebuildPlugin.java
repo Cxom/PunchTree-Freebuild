@@ -28,8 +28,6 @@ import net.punchtree.freebuild.heartsigns.HeartSignListener;
 import net.punchtree.freebuild.parkour.ParkourListener;
 import net.punchtree.freebuild.player.PtfbPlayerOnPlayerJoin;
 import net.punchtree.freebuild.player.PtfbPlayerOnPlayerQuit;
-import net.punchtree.freebuild.playingcards.PlayingCardCommands;
-import net.punchtree.freebuild.playingcards.PlayingCardInteractListener;
 import net.punchtree.freebuild.towerdefense.*;
 import net.punchtree.freebuild.towerdefense.tower.TowerDefenseHotbarUiListener;
 import net.punchtree.freebuild.waterparks.SlideManager;
@@ -107,7 +105,6 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         getCommand("billiards").setExecutor(new BilliardsCommand(billiardsManager));
         getCommand("towerdefense").setExecutor(new TowerDefenseTestingCommand(towerDefenseMapManager, towerDefensePlayerManager));
         getCommand("afk").setExecutor(new AfkCommand());
-        getCommand("playingcards").setExecutor(new PlayingCardCommands());
         getCommand("advancements").setExecutor(new AdvancementsCommand());
         getCommand("slide").setExecutor(new SlideTestingCommand(slideManager));
     }
@@ -121,7 +118,6 @@ public class PunchTreeFreebuildPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new OnCobblestoneForm(), this);
         Bukkit.getPluginManager().registerEvents(new HeartSignListener(), this);
         Bukkit.getPluginManager().registerEvents(new OnPlayerDamageEntity(), this);
-        Bukkit.getPluginManager().registerEvents(new PlayingCardInteractListener(), this);
         Bukkit.getPluginManager().registerEvents(new NetherPortalListener(), this);
 //        Bukkit.getPluginManager().registerEvents(witherFightManager, this);
         Bukkit.getPluginManager().registerEvents(new ArborOnAsyncChat(), this);
