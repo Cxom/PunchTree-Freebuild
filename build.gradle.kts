@@ -14,7 +14,7 @@ repositories {
     maven { url = uri("https://maven.enginehub.org/repo/") }
     maven { url = uri("https://jitpack.io") }
     maven {
-        url = uri("https://maven.pkg.github.com/Cxom/PunchTree-Util")
+        url = uri("https://maven.pkg.github.com/punchtree/PunchTree-Util")
         credentials {
             username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
             password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
